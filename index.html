@@ -2,10 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🐕 강아지 집 찾기</title>
 
-<!-- ✅ Firebase SDK (무료 Firestore 사용) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit }
@@ -19,62 +18,67 @@
     messagingSenderId: "296963756140",
     appId:             "1:296963756140:web:dfe0870d3fe80f433b4849"
   };
-
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
 
-  // 랭킹 저장
-  window.saveRankingDB = async (name, score) => {
+  window.saveRankingDB = async (name, sc) => {
     try {
+      // 버그6: XSS 방지 — 이름을 textContent로만 렌더링하도록 저장 전 태그 제거
+      const safeName = String(name).replace(/[<>&"']/g, c =>
+        ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
       await addDoc(collection(db, "rankings"), {
-        name, score,
+        name: safeName, score: Number(sc),
         date: new Date().toLocaleDateString("ko-KR"),
         createdAt: Date.now()
       });
-    } catch(e){ console.error("랭킹 저장 실패", e); }
+      return true;
+    } catch(e){ console.error("랭킹 저장 실패", e); return false; }
   };
-
-  // 랭킹 불러오기 (상위 10개)
   window.loadRankingDB = async () => {
     try {
-      const q = query(collection(db,"rankings"), orderBy("score","desc"), limit(10));
+      const q = query(collection(db,"rankings"), orderBy("score","desc"), limit(15));
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data());
-    } catch(e){ console.error("랭킹 불러오기 실패", e); return []; }
+    } catch(e){ return []; }
   };
 </script>
 
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#1a1a2e; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:Arial,sans-serif; overflow:hidden; }
-  canvas { border-radius:12px; display:block; }
-  #ui { position:absolute; top:10px; left:10px; right:10px; display:flex; justify-content:space-between; pointer-events:none; gap:6px; flex-wrap:wrap; }
-  .stat { background:rgba(0,0,0,0.55); color:white; padding:5px 12px; border-radius:20px; font-size:14px; font-weight:bold; white-space:nowrap; }
-  #rankBtn { position:absolute; bottom:12px; right:14px; background:rgba(0,0,0,0.55); color:#f7931e; border:none; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:bold; cursor:pointer; z-index:5; }
-  #rankBtn:hover { background:rgba(0,0,0,0.8); }
-  #message { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.92); color:white; padding:26px 36px; border-radius:16px; text-align:center; display:none; z-index:10; min-width:290px; max-width:340px; }
-  #message h2 { font-size:22px; margin-bottom:8px; }
-  #message p  { font-size:13px; margin-bottom:16px; color:#ccc; white-space:pre-line; line-height:1.6; }
-  #message button { background:#f7931e; color:white; border:none; padding:10px 26px; border-radius:25px; font-size:14px; cursor:pointer; font-weight:bold; }
-  #message button:hover { background:#e07d10; }
-  #rankPanel { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,10,30,0.97); color:white; padding:26px 32px; border-radius:16px; display:none; z-index:20; min-width:300px; max-width:360px; }
-  #rankPanel h2 { font-size:20px; text-align:center; margin-bottom:14px; color:#f7931e; }
-  #rankList { list-style:none; margin-bottom:16px; min-height:60px; }
-  #rankList li { display:flex; justify-content:space-between; align-items:center; padding:7px 10px; border-radius:8px; margin-bottom:5px; font-size:14px; background:rgba(255,255,255,0.07); }
+  /* 버그3: 모바일 대응 */
+  html, body { width:100%; height:100%; overflow:hidden; touch-action:none; }
+  body { background:#1a1a2e; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:Arial,sans-serif; }
+  #gameWrap { position:relative; width:100%; max-width:700px; }
+  canvas { border-radius:12px; display:block; width:100%; height:auto; }
+  #ui { position:absolute; top:10px; left:10px; right:10px; display:flex; justify-content:space-between; pointer-events:none; gap:4px; flex-wrap:wrap; }
+  .stat { background:rgba(0,0,0,0.55); color:white; padding:4px 10px; border-radius:20px; font-size:13px; font-weight:bold; white-space:nowrap; }
+  #rankBtn { position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.6); color:#f7931e; border:none; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:bold; cursor:pointer; z-index:5; }
+  /* 버그3: 모바일 터치 버튼 */
+  #touchControls { display:none; position:absolute; bottom:0; left:0; right:0; padding:6px 10px; background:rgba(0,0,0,0.4); border-radius:0 0 12px 12px; }
+  #touchControls.show { display:flex; justify-content:space-between; align-items:center; }
+  .tBtn { background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:10px; font-size:20px; padding:10px 16px; cursor:pointer; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .tBtn:active { background:rgba(255,255,255,0.35); }
+  #message { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.93); color:white; padding:22px 30px; border-radius:16px; text-align:center; display:none; z-index:10; min-width:260px; max-width:310px; width:88%; }
+  #message h2 { font-size:20px; margin-bottom:8px; }
+  #message p  { font-size:12px; margin-bottom:14px; color:#ccc; white-space:pre-line; line-height:1.6; }
+  #message button { background:#f7931e; color:white; border:none; padding:10px 24px; border-radius:25px; font-size:14px; cursor:pointer; font-weight:bold; }
+  #rankPanel { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,10,30,0.97); color:white; padding:20px 24px; border-radius:16px; display:none; z-index:20; min-width:270px; max-width:320px; width:90%; }
+  #rankPanel h2 { font-size:18px; text-align:center; margin-bottom:12px; color:#f7931e; }
+  #rankList { list-style:none; margin-bottom:14px; max-height:50vh; overflow-y:auto; }
+  #rankList li { display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-radius:8px; margin-bottom:4px; font-size:13px; background:rgba(255,255,255,0.07); }
   #rankList li.gold   { background:rgba(255,200,0,0.18); }
   #rankList li.silver { background:rgba(180,180,180,0.15); }
   #rankList li.bronze { background:rgba(180,100,40,0.18); }
-  #rankList li .rname  { flex:1; margin:0 10px; color:#ddd; font-size:13px; overflow:hidden; text-overflow:ellipsis; }
-  #rankList li .rscore { font-weight:bold; color:#f7931e; }
-  #rankList li .rrank  { width:24px; text-align:center; font-size:16px; }
-  #rankClose { display:block; width:100%; background:#333; color:#fff; border:none; padding:9px; border-radius:10px; cursor:pointer; font-size:14px; }
-  #rankClose:hover { background:#555; }
+  #rankList li .rname  { flex:1; margin:0 8px; color:#ddd; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #rankList li .rscore { font-weight:bold; color:#f7931e; font-size:12px; }
+  #rankList li .rrank  { width:22px; text-align:center; font-size:15px; }
+  #rankClose { display:block; width:100%; background:#333; color:#fff; border:none; padding:9px; border-radius:10px; cursor:pointer; font-size:13px; }
   #nameInput { width:100%; padding:8px 12px; border-radius:10px; border:1px solid #555; background:#222; color:#fff; font-size:15px; margin-bottom:12px; text-align:center; outline:none; display:none; }
-  #controls { margin-top:8px; color:#aaa; font-size:12px; text-align:center; }
+  #controls { margin-top:6px; color:#aaa; font-size:11px; text-align:center; }
 </style>
 </head>
 <body>
-<div style="position:relative">
+<div id="gameWrap">
   <canvas id="canvas" width="700" height="380"></canvas>
   <div id="ui">
     <div class="stat" id="stageLabel">스테이지 1</div>
@@ -83,28 +87,40 @@
     <div class="stat" id="boneGoal" style="display:none"></div>
   </div>
   <button id="rankBtn" onclick="openRanking()">🏆 랭킹</button>
+  <!-- 버그3: 모바일 터치 버튼 -->
+  <div id="touchControls">
+    <button class="tBtn" id="btnLeft">◀</button>
+    <button class="tBtn" id="btnSlide">⬇ 슬라이드</button>
+    <button class="tBtn" id="btnJump">⬆ 점프</button>
+    <button class="tBtn" id="btnRight">▶</button>
+  </div>
   <div id="message">
     <h2 id="msgTitle"></h2>
     <p id="msgBody"></p>
     <input id="nameInput" placeholder="닉네임 입력 (최대 10자)" maxlength="10">
-    <button onclick="handleMsgBtn()"><span id="msgBtn"></span></button>
+    <button id="msgBtnEl" onclick="handleMsgBtn()"><span id="msgBtn"></span></button>
   </div>
   <div id="rankPanel">
     <h2>🏆 명예의 전당</h2>
-    <ul id="rankList"><li style="justify-content:center;color:#888">불러오는 중...</li></ul>
+    <ul id="rankList"></ul>
     <button id="rankClose" onclick="closeRanking()">닫기</button>
   </div>
 </div>
-<div id="controls">⬆×2 : 2단점프 &nbsp;|&nbsp; ⬇ : 슬라이드 &nbsp;|&nbsp; ← → : 이동 &nbsp;|&nbsp; 🦴 500개마다 ❤️+1</div>
+<div id="controls">⬆×2 점프 &nbsp;|&nbsp; ⬇ 슬라이드 &nbsp;|&nbsp; ← → 이동 &nbsp;|&nbsp; 🦴 500점마다 ❤️+1</div>
 
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 const GROUND_Y = H - 80;
-const FPS = 60;
-const PROJ_LIFE = 3 * FPS;
+const PROJ_LIFE = 180; // 3초 @ 60fps — 버그6: FPS 독립적 처리를 위해 실제 시간(ms)으로 전환
 const BLINK_START = 60;
+
+// ── 버그6: FPS 독립 타이머 ──
+let lastTime = 0;
+const TARGET_FPS = 60;
+const FRAME_MS = 1000 / TARGET_FPS;
+let accumulator = 0;
 
 const PALETTES = [
   { sky:'#87CEEB', ground:'#8B5E3C', groundTop:'#5D8A3C', name:'도시 거리' },
@@ -127,6 +143,7 @@ const BOSSES = [
 const FOODS = ['🍗','🍖','🌭','🐟','🍕','🍩','🥩','🍔','🍣'];
 const OB_EMOJIS = ['🚗','🪨','🌳','🚧','🛺','🪺','🚙','🗑️'];
 
+let scoreToRegister = 0;
 let state='title', stageIdx=0, score=0, hp=3, maxHp=3;
 let hitCooldown=0, stageDist=0;
 let totalBones=0, collectedBones=0;
@@ -137,6 +154,7 @@ let bossTimeLeft=0, bossMaxTime=0;
 let boss=null, bossAnim=0, nextThrow=0, bossMoveTimer=0;
 let obstacles=[], bones=[], projectiles=[];
 let obTimer=0, boneTimer=0;
+const HP_BONUS_EVERY=500;
 let lastHpBonusAt=0, hpFlash=0;
 let rankingOpen=false;
 
@@ -144,42 +162,15 @@ const dog={x:80,y:GROUND_Y,w:52,h:46,vy:0,jumpsLeft:2,sliding:false,slideTimer:0
 let dogFrame=0, dogFrameTimer=0;
 let clouds=[{x:100,y:55,s:1},{x:310,y:38,s:.8},{x:560,y:65,s:1.1},{x:430,y:30,s:.7}];
 
-// ── 랭킹 ──
-async function openRanking(){
-  rankingOpen=true;
-  document.getElementById('rankPanel').style.display='block';
-  document.getElementById('rankList').innerHTML='<li style="justify-content:center;color:#888">불러오는 중... 🐾</li>';
-  const data = window.loadRankingDB ? await window.loadRankingDB() : [];
-  renderRankList(data);
-}
-function closeRanking(){
-  rankingOpen=false;
-  document.getElementById('rankPanel').style.display='none';
-  if(state==='gameover'||state==='title'){
-    stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;
-    state='running';initStage();
-  }
-}
-function renderRankList(data){
-  const ul=document.getElementById('rankList');
-  ul.innerHTML='';
-  if(!data||data.length===0){
-    ul.innerHTML='<li style="justify-content:center;color:#888">아직 기록이 없어요 🐾</li>';
-    return;
-  }
-  const medals=['🥇','🥈','🥉'];
-  const cls=['gold','silver','bronze'];
-  data.forEach((r,i)=>{
-    const li=document.createElement('li');
-    if(i<3) li.className=cls[i];
-    li.innerHTML=`<span class="rrank">${medals[i]||i+1}</span><span class="rname">${r.name}</span><span class="rscore">🦴${r.score}</span><span style="font-size:11px;color:#666;margin-left:6px">${r.date}</span>`;
-    ul.appendChild(li);
-  });
-}
+// ── 버그3: 모바일 터치 감지 ──
+const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+if(isMobile) document.getElementById('touchControls').classList.add('show');
 
-// ── 키 ──
+// ── 버그5: 닉네임 input에 포커스 중이면 키 이벤트 차단 ──
+const nameInput = document.getElementById('nameInput');
 const keys={};
-document.addEventListener('keydown',e=>{
+document.addEventListener('keydown', e => {
+  if(document.activeElement === nameInput) return; // 버그5 수정
   if(rankingOpen) return;
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
   if(!keys[e.code]){
@@ -187,11 +178,32 @@ document.addEventListener('keydown',e=>{
       dog.vy=dog.jumpsLeft===2?-13.5:-11; dog.jumpsLeft--;
     }
     if(e.code==='ArrowDown'&&!dog.sliding&&dog.jumpsLeft===2){ dog.sliding=true; dog.slideTimer=28; }
-    if(state==='title'){ hideMsg(); state='running'; initStage(); }
+    if(state==='title'&&!rankingOpen){ hideMsg(); state='running'; initStage(); }
   }
   keys[e.code]=true;
 });
-document.addEventListener('keyup',e=>keys[e.code]=false);
+document.addEventListener('keyup', e => keys[e.code]=false);
+
+// 버그3: 터치 버튼 이벤트
+function setupTouchBtn(id, downFn, upFn){
+  const el=document.getElementById(id);
+  const down=e=>{e.preventDefault();downFn&&downFn();};
+  const up=e=>{e.preventDefault();upFn&&upFn();};
+  el.addEventListener('touchstart',down,{passive:false});
+  el.addEventListener('touchend',up,{passive:false});
+  el.addEventListener('mousedown',down);
+  el.addEventListener('mouseup',up);
+}
+const touchKeys={left:false,right:false};
+setupTouchBtn('btnLeft',  ()=>touchKeys.left=true,  ()=>touchKeys.left=false);
+setupTouchBtn('btnRight', ()=>touchKeys.right=true, ()=>touchKeys.right=false);
+setupTouchBtn('btnJump',  ()=>{
+  if(state==='title'&&!rankingOpen){hideMsg();state='running';initStage();return;}
+  if(!dog.sliding&&dog.jumpsLeft>0){dog.vy=dog.jumpsLeft===2?-13.5:-11;dog.jumpsLeft--;}
+}, null);
+setupTouchBtn('btnSlide', ()=>{
+  if(!dog.sliding&&dog.jumpsLeft===2){dog.sliding=true;dog.slideTimer=28;}
+}, null);
 
 const cfg=()=>STAGE_CFG[Math.min(stageIdx,STAGE_CFG.length-1)];
 const pal=()=>PALETTES[Math.min(stageIdx,PALETTES.length-1)];
@@ -202,13 +214,11 @@ function em(e,x,y,sz=32){
   ctx.save();ctx.font=`${sz}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(e,x,y);ctx.restore();
 }
-
 function drawDog(){
   dogFrameTimer++;
   if(dogFrameTimer>9){dogFrame=(dogFrame+1)%2;dogFrameTimer=0;}
   ctx.save();
-  ctx.translate(dog.x+dog.w/2, dog.y+dog.h);
-  ctx.scale(-1,1);
+  ctx.translate(dog.x+dog.w/2,dog.y+dog.h);ctx.scale(-1,1);
   if(dog.sliding){
     ctx.font='38px serif';ctx.textAlign='center';ctx.textBaseline='bottom';
     ctx.save();ctx.scale(1,0.55);ctx.fillText('🐕',0,-4/0.55);ctx.restore();
@@ -220,17 +230,22 @@ function drawDog(){
   ctx.restore();
 }
 
-function initStage(){
+// ── 버그1: 재도전 시 점수 리셋 ──
+function initStage(resetScore=false){
+  if(resetScore){ score=0; lastHpBonusAt=0; hp=3; maxHp=3; }
   obstacles=[];bones=[];projectiles=[];
   obTimer=90;boneTimer=8;
   stageDist=0;totalBones=0;collectedBones=0;
   document.getElementById('boneGoal').style.display='none';
+  // 버그4: dog.x도 초기화
+  dog.x=80;
   resetDog();
 }
 function resetDog(){
   dog.y=GROUND_Y;dog.vy=0;dog.jumpsLeft=2;dog.sliding=false;dog.slideTimer=0;
 }
-function initBoss(){
+function initBoss(resetScore=false){
+  if(resetScore){ score=0; lastHpBonusAt=0; hp=3; maxHp=3; }
   const b=BOSSES[Math.min(stageIdx,BOSSES.length-1)];
   const c=cfg();
   bossMaxTime=c.bossTime;bossTimeLeft=c.bossTime;
@@ -238,7 +253,9 @@ function initBoss(){
   nextThrow=randInt(30,70);
   boss={x:W-110,y:GROUND_Y+dog.h-60,tx:W-110,ty:GROUND_Y+dog.h-60,emoji:b.emoji,pattern:b.pattern,name:b.name};
   bossMoveTimer=0;resetBossMoveTarget();
-  resetDog();dog.x=80;
+  // 버그4: boss 재도전 시 dog.x도 초기화
+  dog.x=80;
+  resetDog();
   document.getElementById('boneGoal').style.display='block';
 }
 function resetBossMoveTarget(){
@@ -280,19 +297,23 @@ function spawnBossThrow(){
 }
 
 function checkBoneBonus(){
-  const th=lastHpBonusAt+500;
+  const th=lastHpBonusAt+HP_BONUS_EVERY;
   if(score>=th){hp=Math.min(hp+1,5);maxHp=Math.max(maxHp,hp);lastHpBonusAt=th;hpFlash=90;}
 }
 
+// ── 버그6: FPS 독립 게임 루프 ──
 function update(){
   if(!['running','boss'].includes(state)||rankingOpen) return;
   hitCooldown=Math.max(0,hitCooldown-1);
   hpFlash=Math.max(0,hpFlash-1);
   clouds.forEach(c=>{c.x-=.35;if(c.x<-90)c.x=W+90;});
   if(dog.slideTimer>0){dog.slideTimer--;if(dog.slideTimer===0)dog.sliding=false;}
+
+  // 버그3: 터치 키도 반영
   const maxX=state==='boss'?W/2-30:W/2-40;
-  if(keys['ArrowLeft'])  dog.x=Math.max(20,dog.x-4);
-  if(keys['ArrowRight']) dog.x=Math.min(maxX,dog.x+4);
+  if(keys['ArrowLeft']||touchKeys.left)   dog.x=Math.max(20,dog.x-4);
+  if(keys['ArrowRight']||touchKeys.right) dog.x=Math.min(maxX,dog.x+4);
+
   dog.vy+=0.62;dog.y+=dog.vy;
   if(dog.y>=GROUND_Y){dog.y=GROUND_Y;dog.vy=0;dog.jumpsLeft=2;}
   const dh=dog.sliding?dog.h-22:dog.h-6;
@@ -324,12 +345,17 @@ function runUpdate(dr){
   obstacles.forEach(o=>o.x-=spd);
   bones.forEach(b=>b.x-=spd);
   obstacles=obstacles.filter(o=>o.x>-100);
+
+  // ── 버그2: 장애물 충돌을 forEach→filter로 변경, 한 프레임에 1회만 피해 처리 ──
   if(hitCooldown===0){
+    let hit=false;
     obstacles.forEach(o=>{
+      if(hit) return;
       const or={x:o.x+6,y:o.y-o.h+6,w:o.w-12,h:o.h-8};
-      if(collides(dr,or)){hp--;hitCooldown=90;if(hp<=0)gameOver();}
+      if(collides(dr,or)){hit=true;hp--;hitCooldown=90;if(hp<=0)gameOver();}
     });
   }
+
   bones=bones.filter(b=>{
     const br={x:b.x-12,y:b.y-12,w:24,h:24};
     if(collides(dr,br)){score+=10;collectedBones++;return false;}
@@ -360,20 +386,25 @@ function bossUpdate(dr){
     if(p.y>=GROUND_Y+dog.h-10){p.y=GROUND_Y+dog.h-10;p.vy*=-.25;p.vx*=.65;if(Math.abs(p.vy)<.5)p.vy=0;if(Math.abs(p.vx)<.3)p.vx=0;}
   });
   projectiles=projectiles.filter(p=>p.life>0&&p.x>-50&&p.x<W+50);
+
+  // ── 버그2: 보스 투사체도 한 프레임에 1회만 피해 처리 ──
+  let bossHit=false;
   projectiles=projectiles.filter(p=>{
     const pr={x:p.x-13,y:p.y-13,w:26,h:26};
     if(collides(dr,pr)){
       if(p.isBone){bossBonesCaught++;score+=10;}
-      else if(hitCooldown===0){hp--;hitCooldown=80;if(hp<=0)gameOver();}
+      else if(hitCooldown===0&&!bossHit){bossHit=true;hp--;hitCooldown=80;if(hp<=0)gameOver();}
       return false;
     }
     return true;
   });
+
   if(bossBonesCaught>=BOSS_BONE_GOAL){
     state='bossClear';
     const isLast=stageIdx>=BOSSES.length-1;
     if(isLast){
-      showMsg('🎉 클리어!',`최종 점수: 🦴 ${score}\n집에 도착했어요! 🏠\n\n닉네임을 입력하고 랭킹에 등록하세요!`,'🏆 랭킹 등록!','registerWin',true);
+      scoreToRegister=score;
+      showMsg('🎉 클리어!',`최종 점수: 🦴 ${scoreToRegister}\n집에 도착했어요! 🏠\n\n닉네임을 입력하고 랭킹에 등록하세요!`,'🏆 랭킹 등록!','registerWin',true);
     } else {
       showMsg('🎉 보스 격파!',`뼈다귀 ${bossBonesCaught}개 캐치!\n유혹을 이겨냈어요! 계속 달려요!`,'다음 스테이지!','nextStage');
     }
@@ -385,9 +416,11 @@ function bossUpdate(dr){
 
 function gameOver(){
   state='gameover';
-  showMsg('😢 게임 오버',`최종 점수: 🦴 ${score}\n\n닉네임을 입력하고 랭킹에 등록하세요!`,'🏆 랭킹 등록!','registerGameOver',true);
+  scoreToRegister=score;
+  showMsg('😢 게임 오버',`최종 점수: 🦴 ${scoreToRegister}\n\n닉네임을 입력하고 랭킹에 등록하세요!`,'🏆 랭킹 등록!','registerGameOver',true);
 }
 
+// ── 그리기 ──
 function draw(){
   ctx.clearRect(0,0,W,H);
   drawBg();
@@ -398,7 +431,6 @@ function draw(){
   updateUI();
   if(state==='title') drawTitle();
 }
-
 function drawBg(){
   const p=pal();
   ctx.fillStyle=p.sky;ctx.fillRect(0,0,W,H);
@@ -456,10 +488,9 @@ function drawTitle(){
   ctx.font='14px Arial';ctx.fillStyle='#ddd';ctx.fillText('길을 잃은 강아지가 집으로 돌아가는 여정!',W/2,H/2-22);
   ctx.font='12px Arial';ctx.fillStyle='#aaa';
   ctx.fillText('🦴 30% 이상 → 보스 도전  |  보스전 🦴 15개 캐치 → 클리어',W/2,H/2+8);
-  ctx.fillText('🦴 500점마다 ❤️+1  |  🏆 전체 공유 랭킹!',W/2,H/2+28);
+  ctx.fillText('🦴 500점(뼈다귀 50개)마다 ❤️+1  |  🏆 전체 공유 랭킹!',W/2,H/2+28);
   ctx.font='15px Arial';ctx.fillStyle='#f7931e';ctx.fillText('아무 키나 눌러 시작',W/2,H/2+58);
 }
-
 function updateUI(){
   document.getElementById('stageLabel').textContent=state==='boss'?(boss?.name??''):`스테이지 ${stageIdx+1} · ${pal().name}`;
   document.getElementById('scoreLabel').textContent=`🦴 ${score}`;
@@ -476,52 +507,105 @@ function updateUI(){
   } else { bg.style.display='none'; }
 }
 
+// ── 랭킹 ──
+async function openRanking(){
+  rankingOpen=true;
+  document.getElementById('rankPanel').style.display='block';
+  document.getElementById('rankList').innerHTML='<li style="justify-content:center;color:#888">불러오는 중... 🐾</li>';
+  const data=window.loadRankingDB?await window.loadRankingDB():[];
+  renderRankList(data);
+}
+function closeRanking(){
+  rankingOpen=false;
+  document.getElementById('rankPanel').style.display='none';
+  if(!['running','boss'].includes(state)) state='title';
+}
+function renderRankList(data){
+  const ul=document.getElementById('rankList');
+  ul.innerHTML='';
+  if(!data||data.length===0){
+    const li=document.createElement('li');
+    li.style.cssText='justify-content:center;color:#888';
+    li.textContent='아직 기록이 없어요 🐾';
+    ul.appendChild(li);return;
+  }
+  const medals=['🥇','🥈','🥉'];
+  const cls=['gold','silver','bronze'];
+  data.forEach((r,i)=>{
+    const li=document.createElement('li');
+    if(i<3) li.className=cls[i];
+    // ── 버그6: innerHTML 대신 textContent로 XSS 방지 ──
+    const rank=document.createElement('span');rank.className='rrank';rank.textContent=medals[i]||(i+1);
+    const name=document.createElement('span');name.className='rname';name.textContent=r.name;
+    const sc=document.createElement('span');sc.className='rscore';sc.textContent=`🦴${r.score}`;
+    const dt=document.createElement('span');dt.style.cssText='font-size:11px;color:#666;margin-left:6px';dt.textContent=r.date;
+    li.append(rank,name,sc,dt);ul.appendChild(li);
+  });
+}
+
 function showMsg(title,body,btn,next,showName=false){
   document.getElementById('msgTitle').textContent=title;
   document.getElementById('msgBody').textContent=body;
   document.getElementById('msgBtn').textContent=btn;
-  const ni=document.getElementById('nameInput');
+  const ni=nameInput;
   ni.style.display=showName?'block':'none';
   if(showName){ni.value='';setTimeout(()=>ni.focus(),100);}
   document.getElementById('message').style.display='block';
   window._next=next;
 }
 function hideMsg(){document.getElementById('message').style.display='none';}
+
 async function handleMsgBtn(){
   const n=window._next;
-  const name=document.getElementById('nameInput').value.trim()||'무명 강아지';
+  const name=nameInput.value.trim()||'무명 강아지';
   if(n==='registerWin'||n==='registerGameOver'){
+    const btn=document.getElementById('msgBtnEl');
+    btn.disabled=true;
     document.getElementById('msgBtn').textContent='저장 중...';
-    if(window.saveRankingDB) await window.saveRankingDB(name, score);
+    if(window.saveRankingDB) await window.saveRankingDB(name,scoreToRegister);
+    btn.disabled=false;
     hideMsg();
+    stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;scoreToRegister=0;
+    state='title';
     await openRanking();
-    if(n==='registerGameOver'){
-      stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;
-    }
     return;
   }
   hideMsg();
-  if(n==='running'){state='running';initStage();}
+  // ── 버그1: 재도전 시 점수 리셋 ──
+  if(n==='running'){state='running';initStage(true);}
   else if(n==='boss'){state='boss';initBoss();}
-  else if(n==='retryStage'){state='running';initStage();}
-  else if(n==='retryBoss'){state='boss';initBoss();}
+  else if(n==='retryStage'){state='running';initStage(true);}  // 스테이지 실패 → 점수 리셋
+  else if(n==='retryBoss'){state='boss';initBoss(true);}       // 보스 실패 → 점수 리셋
   else if(n==='nextStage'){
     stageIdx++;
     if(stageIdx>=BOSSES.length){
-      showMsg('🏠 집에 도착!',`최종 점수: 🦴 ${score}\n\n닉네임을 입력하고 랭킹에 등록하세요!`,'🏆 랭킹 등록!','registerWin',true);
+      scoreToRegister=score;
+      showMsg('🏠 집에 도착!',`최종 점수: 🦴 ${scoreToRegister}\n\n닉네임을 입력하고 랭킹에 등록하세요!`,'🏆 랭킹 등록!','registerWin',true);
       return;
     }
     state='running';initStage();
   }
-  else if(n==='restart'){stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;state='running';initStage();}
+  else if(n==='restart'){stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;scoreToRegister=0;state='running';initStage();}
 }
 
-function loop(){update();draw();requestAnimationFrame(loop);}
+// ── 버그6: FPS 독립 루프 ──
+function loop(ts){
+  const dt=ts-lastTime;
+  lastTime=ts;
+  accumulator+=dt;
+  while(accumulator>=FRAME_MS){
+    update();
+    accumulator-=FRAME_MS;
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
 showMsg('🐕 강아지 집 찾기',
-  '길을 잃은 강아지가 집으로 돌아가요!\n⬆×2 : 2단 점프  ⬇ : 슬라이드  ← → : 이동\n\n🦴 뼈다귀 30% → 보스 도전\n🦴 보스전 뼈다귀 15개 → 클리어\n❤️ 500점마다 하트 +1 보너스!',
+  '길을 잃은 강아지가 집으로 돌아가요!\n⬆×2 : 2단 점프  ⬇ : 슬라이드  ← → : 이동\n\n🦴 뼈다귀 30% → 보스 도전\n🦴 보스전 뼈다귀 15개 → 클리어\n❤️ 500점(뼈다귀 50개)마다 하트 +1!',
   '출발!','running');
 state='title';
-loop();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
