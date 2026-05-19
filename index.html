@@ -9,7 +9,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit }
     from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
-
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
   const firebaseConfig = {
     apiKey:            "AIzaSyCKPnUeU_BCNFYH6j4dE7j149pGToYNWWM",
     authDomain:        "come-back-home-60413.firebaseapp.com",
@@ -19,6 +19,7 @@
     appId:             "1:296963756140:web:dfe0870d3fe80f433b4849"
   };
   const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
   const db  = getFirestore(app);
 
   window.saveRankingDB = async (name, sc) => {
