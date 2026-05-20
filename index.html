@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🐕 강아지 집 찾기</title>
 
+<!-- ████ FIREBASE ████ -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit }
-    from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+  import { initializeApp }                              from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs,
+           query, orderBy, limit }                      from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey:            "AIzaSyCKPnUeU_BCNFYH6j4dE7j149pGToYNWWM",
@@ -18,87 +19,144 @@
     messagingSenderId: "296963756140",
     appId:             "1:296963756140:web:dfe0870d3fe80f433b4849"
   };
+
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
 
   window.saveRankingDB = async (name, sc) => {
     try {
-      const safeName = String(name).replace(/[<>&"']/g, c =>
-        ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
-      await addDoc(collection(db,"rankings"),{
-        name:safeName, score:Number(sc),
-        date:new Date().toLocaleDateString("ko-KR"),
-        createdAt:Date.now()
-      });
+      const safe = String(name).replace(/[<>&"']/g,
+        c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+      await addDoc(collection(db, "rankings"),
+        { name: safe, score: Number(sc),
+          date: new Date().toLocaleDateString("ko-KR"), createdAt: Date.now() });
       return true;
-    } catch(e){console.error("랭킹 저장 실패",e);return false;}
+    } catch(e) { console.error("랭킹 저장 실패", e); return false; }
   };
+
   window.loadRankingDB = async () => {
     try {
-      const q=query(collection(db,"rankings"),orderBy("score","desc"),limit(15));
-      const snap=await getDocs(q);
-      return snap.docs.map(d=>d.data());
-    } catch(e){return [];}
+      const q    = query(collection(db,"rankings"), orderBy("score","desc"), limit(15));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => d.data());
+    } catch(e) { return []; }
   };
 </script>
 
+<!-- ████ STYLE ████ -->
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html,body { width:100%; height:100%; overflow:hidden; touch-action:none; }
-  body { background:#1a1a2e; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:Arial,sans-serif; }
+  html, body { width:100%; height:100%; overflow:hidden; touch-action:none; }
+  body { background:#1a1a2e; display:flex; flex-direction:column;
+         align-items:center; justify-content:center; font-family:Arial,sans-serif; }
+
   #gameWrap { position:relative; width:100%; max-width:700px; }
-  canvas { border-radius:12px; display:block; width:100%; height:auto; }
-  #ui { position:absolute; top:10px; left:10px; right:10px; display:flex; justify-content:space-between; pointer-events:none; gap:4px; flex-wrap:wrap; }
-  .stat { background:rgba(0,0,0,0.55); color:white; padding:4px 10px; border-radius:20px; font-size:13px; font-weight:bold; white-space:nowrap; }
-  #rankBtn { position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.6); color:#f7931e; border:none; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:bold; cursor:pointer; z-index:5; }
-  #touchControls { display:none; position:absolute; bottom:0; left:0; right:0; padding:6px 10px; background:rgba(0,0,0,0.4); border-radius:0 0 12px 12px; }
+  canvas    { border-radius:12px; display:block; width:100%; height:auto; }
+
+  /* HUD */
+  #ui { position:absolute; top:10px; left:10px; right:10px;
+        display:flex; justify-content:space-between;
+        pointer-events:none; gap:4px; flex-wrap:wrap; }
+  .stat { background:rgba(0,0,0,0.55); color:#fff;
+          padding:4px 10px; border-radius:20px; font-size:13px; font-weight:bold; white-space:nowrap; }
+
+  /* 랭킹 버튼 */
+  #rankBtn { position:absolute; bottom:8px; right:8px;
+             background:rgba(0,0,0,0.6); color:#f7931e;
+             border:none; padding:5px 12px; border-radius:20px;
+             font-size:12px; font-weight:bold; cursor:pointer; z-index:5; }
+
+  /* 모바일 터치 버튼 */
+  #touchControls { display:none; position:absolute; bottom:0; left:0; right:0;
+                   padding:6px 10px; background:rgba(0,0,0,0.4);
+                   border-radius:0 0 12px 12px; }
   #touchControls.show { display:flex; justify-content:space-between; align-items:center; }
-  .tBtn { background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:10px; font-size:20px; padding:10px 16px; cursor:pointer; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .tBtn { background:rgba(255,255,255,0.15); color:#fff;
+          border:1px solid rgba(255,255,255,0.3); border-radius:10px;
+          font-size:20px; padding:10px 16px; cursor:pointer;
+          user-select:none; -webkit-user-select:none; touch-action:none; }
   .tBtn:active { background:rgba(255,255,255,0.35); }
-  #message { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.93); color:white; padding:22px 30px; border-radius:16px; text-align:center; display:none; z-index:10; min-width:260px; max-width:320px; width:88%; }
+
+  /* 메시지 팝업 */
+  #message { position:absolute; top:50%; left:50%;
+             transform:translate(-50%,-50%);
+             background:rgba(0,0,0,0.93); color:#fff;
+             padding:22px 28px; border-radius:16px;
+             text-align:center; display:none; z-index:10;
+             min-width:260px; max-width:320px; width:88%; }
   #message h2 { font-size:20px; margin-bottom:8px; }
-  #message p  { font-size:12px; margin-bottom:14px; color:#ccc; white-space:pre-line; line-height:1.6; }
-  .msgBtns { display:flex; flex-direction:column; gap:8px; }
-  .msgBtns button { background:#f7931e; color:white; border:none; padding:10px 20px; border-radius:25px; font-size:13px; cursor:pointer; font-weight:bold; }
-  .msgBtns button.sub { background:#444; }
-  .msgBtns button:hover { opacity:0.85; }
-  #nameInput { width:100%; padding:8px 12px; border-radius:10px; border:1px solid #555; background:#222; color:#fff; font-size:15px; margin-bottom:12px; text-align:center; outline:none; display:none; }
-  #rankPanel { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,10,30,0.97); color:white; padding:20px 24px; border-radius:16px; display:none; z-index:20; min-width:270px; max-width:320px; width:90%; }
-  #rankPanel h2 { font-size:18px; text-align:center; margin-bottom:12px; color:#f7931e; }
-  #rankList { list-style:none; margin-bottom:14px; max-height:50vh; overflow-y:auto; }
-  #rankList li { display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-radius:8px; margin-bottom:4px; font-size:13px; background:rgba(255,255,255,0.07); }
+  #message p  { font-size:12px; margin-bottom:12px; color:#ccc;
+                white-space:pre-line; line-height:1.6; }
+  #nameInput  { width:100%; padding:8px 12px; border-radius:10px;
+                border:1px solid #555; background:#222; color:#fff;
+                font-size:14px; margin-bottom:10px;
+                text-align:center; outline:none; display:none; }
+  .msgBtns        { display:flex; flex-direction:column; gap:8px; }
+  .msgBtns button { background:#f7931e; color:#fff; border:none;
+                    padding:10px 20px; border-radius:25px;
+                    font-size:13px; cursor:pointer; font-weight:bold; }
+  .msgBtns button.sub  { background:#444; }
+  .msgBtns button:hover{ opacity:.85; }
+
+  /* 랭킹 팝업 */
+  #rankPanel { position:absolute; top:50%; left:50%;
+               transform:translate(-50%,-50%);
+               background:rgba(10,10,30,0.97); color:#fff;
+               padding:20px 24px; border-radius:16px;
+               display:none; z-index:20;
+               min-width:270px; max-width:320px; width:90%; }
+  #rankPanel h2  { font-size:18px; text-align:center; margin-bottom:12px; color:#f7931e; }
+  #rankList      { list-style:none; margin-bottom:14px; max-height:50vh; overflow-y:auto; }
+  #rankList li   { display:flex; justify-content:space-between; align-items:center;
+                   padding:6px 8px; border-radius:8px; margin-bottom:4px;
+                   font-size:13px; background:rgba(255,255,255,0.07); }
   #rankList li.gold   { background:rgba(255,200,0,0.18); }
   #rankList li.silver { background:rgba(180,180,180,0.15); }
   #rankList li.bronze { background:rgba(180,100,40,0.18); }
-  #rankList li .rname  { flex:1; margin:0 8px; color:#ddd; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  #rankList li .rscore { font-weight:bold; color:#f7931e; font-size:12px; }
-  #rankList li .rrank  { width:22px; text-align:center; font-size:15px; }
-  #rankClose { display:block; width:100%; background:#333; color:#fff; border:none; padding:9px; border-radius:10px; cursor:pointer; font-size:13px; }
+  #rankList li .rrank { width:22px; text-align:center; font-size:15px; }
+  #rankList li .rname { flex:1; margin:0 8px; color:#ddd; font-size:12px;
+                        overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #rankList li .rscore{ font-weight:bold; color:#f7931e; font-size:12px; }
+  #rankClose { display:block; width:100%; background:#333; color:#fff;
+               border:none; padding:9px; border-radius:10px;
+               cursor:pointer; font-size:13px; }
+  #rankClose:hover { background:#555; }
+
   #controls { margin-top:6px; color:#aaa; font-size:11px; text-align:center; }
 </style>
 </head>
+
 <body>
 <div id="gameWrap">
   <canvas id="canvas" width="700" height="380"></canvas>
+
+  <!-- HUD -->
   <div id="ui">
     <div class="stat" id="stageLabel">스테이지 1</div>
     <div class="stat" id="scoreLabel">🦴 0</div>
     <div class="stat" id="hpLabel">❤️❤️❤️</div>
     <div class="stat" id="boneGoal" style="display:none"></div>
   </div>
+
   <button id="rankBtn" onclick="openRanking()">🏆 랭킹</button>
+
+  <!-- 모바일 조작 -->
   <div id="touchControls">
     <button class="tBtn" id="btnLeft">◀</button>
     <button class="tBtn" id="btnSlide">⬇</button>
     <button class="tBtn" id="btnJump">⬆ 점프</button>
     <button class="tBtn" id="btnRight">▶</button>
   </div>
+
+  <!-- 메시지 팝업 -->
   <div id="message">
     <h2 id="msgTitle"></h2>
-    <p id="msgBody"></p>
+    <p  id="msgBody"></p>
     <input id="nameInput" placeholder="닉네임 입력 (최대 10자)" maxlength="10">
     <div class="msgBtns" id="msgBtns"></div>
   </div>
+
+  <!-- 랭킹 팝업 -->
   <div id="rankPanel">
     <h2>🏆 명예의 전당</h2>
     <ul id="rankList"></ul>
@@ -107,607 +165,1028 @@
 </div>
 <div id="controls">⬆×2 점프 &nbsp;|&nbsp; ⬇ 슬라이드 &nbsp;|&nbsp; ← → 이동 &nbsp;|&nbsp; ❤️ 하트 획득 시 HP+1</div>
 
+<!-- ████ GAME SCRIPT ████ -->
 <script>
-const canvas=document.getElementById('canvas');
-const ctx=canvas.getContext('2d');
-const W=canvas.width,H=canvas.height;
-const GROUND_Y=H-80;
-const PROJ_LIFE=180,BLINK_START=60;
-const BONE_GOAL_PCT=0.3,BOSS_BONE_GOAL=15,HP_BONUS_EVERY=500;
-const HEART_SPAWN_MIN=400,HEART_SPAWN_MAX=900;
+"use strict";
 
-var CUTSCENES={
-  stage0_intro:[
-    {bg:'#87CEEB',emoji:'🐕‍🦺',text:'어느 평화로운 오후...\n주인과 산책 중이던 강아지',sub:'꼬리를 살랑살랑~'},
-    {bg:'#FFD700',emoji:'😱',   text:'갑자기 — 펑! 💥\n폭죽 소리에 깜짝 놀란 강아지!',sub:'줄이 끊어졌다!'},
-    {bg:'#708090',emoji:'🏙️',  text:'정신을 차려보니...\n낯선 도시 한복판',sub:'주인이... 없어'},
-    {bg:'#f7931e',emoji:'🐕',   text:'"괜찮아! 반드시\n집에 돌아갈 거야!"',sub:'씩씩하게 앞발을 구른다!'},
+// ═══════════════════════════════════════════════════
+//  캔버스 / 상수
+// ═══════════════════════════════════════════════════
+const canvas   = document.getElementById("canvas");
+const ctx      = canvas.getContext("2d");
+const W        = canvas.width;   // 700
+const H        = canvas.height;  // 380
+const GROUND_Y = H - 80;         // 강아지 발 y좌표 기준
+
+const PROJ_LIFE       = 180;  // 투사체 수명 (프레임)
+const BLINK_START     = 60;   // 투사체 깜빡 시작 (프레임 남았을 때)
+const BONE_GOAL_PCT   = 0.30; // 스테이지 통과 뼈다귀 획득률
+const BOSS_BONE_GOAL  = 15;   // 보스전 클리어 뼈다귀 수
+const HP_BONUS_SCORE  = 500;  // 하트 보너스 점수 주기
+const HEART_SPAWN_MIN = 400;  // 하트 스폰 최소 간격 (프레임)
+const HEART_SPAWN_MAX = 900;  // 하트 스폰 최대 간격
+
+// ═══════════════════════════════════════════════════
+//  컷씬 데이터
+// ═══════════════════════════════════════════════════
+const CUTSCENES = {
+  stage0_intro: [
+    { bg:"#87CEEB", emoji:"🐕‍🦺", text:"어느 평화로운 오후...\n주인과 산책 중이던 강아지",  sub:"꼬리를 살랑살랑~" },
+    { bg:"#FFD700", emoji:"😱",    text:"갑자기 — 펑! 💥\n폭죽 소리에 깜짝 놀란 강아지!", sub:"줄이 끊어졌다!" },
+    { bg:"#708090", emoji:"🏙️",   text:"정신을 차려보니...\n낯선 도시 한복판",              sub:"주인이... 없어" },
+    { bg:"#f7931e", emoji:"🐕",    text:"\"괜찮아! 반드시\n집에 돌아갈 거야!\"",            sub:"씩씩하게 앞발을 구른다!" },
   ],
-  boss0_intro:[
-    {bg:'#cc6600',emoji:'🍗',text:'앞을 막아선 수상한 아저씨\n치킨 냄새가 진동한다',sub:'콧구멍이 벌름벌름...'},
-    {bg:'#aa4400',emoji:'😏',text:'"이리 온~ 착한 강아지~\n치킨 줄게~"',sub:'치킨 아저씨가 손짓한다!'},
-    {bg:'#f7931e',emoji:'🐕',text:'"유혹하지 마!\n난 집에 가야 해!!"',sub:'눈을 부릅뜨고 달려든다!'},
+  boss0_intro: [
+    { bg:"#cc6600", emoji:"🍗", text:"앞을 막아선 수상한 아저씨\n치킨 냄새가 진동한다",     sub:"콧구멍이 벌름벌름..." },
+    { bg:"#aa4400", emoji:"😏", text:"\"이리 온~ 착한 강아지~\n치킨 줄게~\"",              sub:"치킨 아저씨가 손짓한다!" },
+    { bg:"#f7931e", emoji:"🐕", text:"\"유혹하지 마!\n난 집에 가야 해!!\"",                sub:"눈을 부릅뜨고 달려든다!" },
   ],
-  boss1_intro:[
-    {bg:'#4a7a30',emoji:'🌳',text:'공원 한가운데\n포근한 냄새가 퍼진다...',sub:'뭔가 달콤한 냄새가...'},
-    {bg:'#3a6020',emoji:'👵',text:'할머니가 간식 바구니를\n흔들며 다가온다!',sub:'"착하지~ 이것 좀 먹어봐~"'},
-    {bg:'#f7931e',emoji:'🐕',text:'"안 돼요 할머니!\n저 집에 가야 해요!!"',sub:'꾹 참고 달려나간다!'},
+  boss1_intro: [
+    { bg:"#4a7a30", emoji:"🌳", text:"공원 한가운데\n포근한 냄새가 퍼진다...",              sub:"뭔가 달콤한 냄새가..." },
+    { bg:"#3a6020", emoji:"👵", text:"할머니가 간식 바구니를\n흔들며 다가온다!",            sub:"\"착하지~ 이것 좀 먹어봐~\"" },
+    { bg:"#f7931e", emoji:"🐕", text:"\"안 돼요 할머니!\n저 집에 가야 해요!!\"",           sub:"꾹 참고 달려나간다!" },
   ],
-  boss2_intro:[
-    {bg:'#2a1a0a',emoji:'🌭',text:'숲 속에서 이상한 트럭이\n연기를 내뿜으며 나타났다!',sub:'소시지 굽는 냄새...'},
-    {bg:'#1a0a00',emoji:'🚚',text:'"소시지 한 개만 먹고 가~\n맛있는 거 줄게!"',sub:'트럭이 길을 막는다!'},
-    {bg:'#f7931e',emoji:'🐕',text:'"비켜! 나는\n집에 가야 한다고!!"',sub:'온 힘을 다해 돌진한다!'},
+  boss2_intro: [
+    { bg:"#2a1a0a", emoji:"🌭", text:"숲 속에서 이상한 트럭이\n연기를 내뿜으며 나타났다!", sub:"소시지 굽는 냄새..." },
+    { bg:"#1a0a00", emoji:"🚚", text:"\"소시지 한 개만 먹고 가~\n맛있는 거 줄게!\"",       sub:"트럭이 길을 막는다!" },
+    { bg:"#f7931e", emoji:"🐕", text:"\"비켜! 나는\n집에 가야 한다고!!\"",                 sub:"온 힘을 다해 돌진한다!" },
   ],
-  boss3_intro:[
-    {bg:'#1a1a2a',emoji:'😸',text:'골목 끝에서\n고양이가 나타났다!',sub:'참치 캔을 흔들며...'},
-    {bg:'#0a0a1a',emoji:'🐟',text:'"냐옹~ 참치 줄게~\n같이 놀자옹~"',sub:'꼬리를 흔들며 유혹한다!'},
-    {bg:'#f7931e',emoji:'🐕',text:'"집이 눈앞이야!\n절대 안 속아!!"',sub:'마지막 힘을 쥐어짠다!'},
+  boss3_intro: [
+    { bg:"#1a1a2a", emoji:"😸", text:"골목 끝에서\n고양이가 나타났다!",                    sub:"참치 캔을 흔들며..." },
+    { bg:"#0a0a1a", emoji:"🐟", text:"\"냐옹~ 참치 줄게~\n같이 놀자옹~\"",                sub:"꼬리를 흔들며 유혹한다!" },
+    { bg:"#f7931e", emoji:"🐕", text:"\"집이 눈앞이야!\n절대 안 속아!!\"",                 sub:"마지막 힘을 쥐어짠다!" },
   ],
 };
 
-var SPEECH_TRIGGERS_DATA=[
-  [{dist:300,text:'집 냄새가...\n저쪽인가?'},{dist:1200,text:'지치지 마!\n주인이 기다려!'},{dist:2200,text:'저 냄새는...\n치킨?! 집중!!'}],
-  [{dist:300,text:'공원이다!\n여기서 놀던 곳인데...'},{dist:1400,text:'할머니 간식 냄새!\n안 돼, 참아야 해!'},{dist:2800,text:'조금만 더!\n포기하지 않을 거야!'}],
-  [{dist:300,text:'숲이다...\n무섭지 않아!'},{dist:1600,text:'어두워도 괜찮아\n코가 길을 알고 있어!'},{dist:3200,text:'소시지 냄새?!\n집중, 집중!'}],
-  [{dist:300,text:'골목길...\n거의 다 왔어!'},{dist:1800,text:'주인 목소리가\n들리는 것 같아!'},{dist:3800,text:'참치 냄새!\n마지막 유혹이야!!'}],
+// ═══════════════════════════════════════════════════
+//  말풍선 트리거 (스테이지별)
+// ═══════════════════════════════════════════════════
+const SPEECH_TRIGGERS = [
+  [ {dist:300,  text:"집 냄새가...\n저쪽인가?"},
+    {dist:1200, text:"지치지 마!\n주인이 기다려!"},
+    {dist:2200, text:"저 냄새는...\n치킨?! 집중!!"} ],
+  [ {dist:300,  text:"공원이다!\n여기서 놀던 곳인데..."},
+    {dist:1400, text:"할머니 간식 냄새!\n안 돼, 참아야 해!"},
+    {dist:2800, text:"조금만 더!\n포기하지 않을 거야!"} ],
+  [ {dist:300,  text:"숲이다...\n무섭지 않아!"},
+    {dist:1600, text:"어두워도 괜찮아\n코가 길을 알고 있어!"},
+    {dist:3200, text:"소시지 냄새?!\n집중, 집중!"} ],
+  [ {dist:300,  text:"골목길...\n거의 다 왔어!"},
+    {dist:1800, text:"주인 목소리가\n들리는 것 같아!"},
+    {dist:3800, text:"참치 냄새!\n마지막 유혹이야!!"} ],
 ];
 
-var PLATFORM_THEMES=[
-  [{emoji:'🏗️',w:110,color:'#607090'},{emoji:'🚌',w:130,color:'#4a7a30'},{emoji:'📦',w:90,color:'#8B5E3C'}],
-  [{emoji:'🌳',w:100,color:'#5D8A3C'},{emoji:'🪨',w:90,color:'#888'},{emoji:'🛖',w:120,color:'#a0703a'}],
-  [{emoji:'🪵',w:110,color:'#6B4226'},{emoji:'🍄',w:80,color:'#c0392b'},{emoji:'🌿',w:100,color:'#27ae60'}],
-  [{emoji:'🛢️',w:80,color:'#555'},{emoji:'📺',w:100,color:'#333'},{emoji:'🧱',w:120,color:'#8B4513'}],
+// ═══════════════════════════════════════════════════
+//  발판 테마 (스테이지별)
+// ═══════════════════════════════════════════════════
+const PLATFORM_THEMES = [
+  [ {emoji:"🏗️", w:110, color:"#607090"},
+    {emoji:"🚌", w:130, color:"#4a7a30"},
+    {emoji:"📦", w:90,  color:"#8B5E3C"} ],
+  [ {emoji:"🌳", w:100, color:"#5D8A3C"},
+    {emoji:"🪨", w:90,  color:"#888"},
+    {emoji:"🛖", w:120, color:"#a0703a"} ],
+  [ {emoji:"🪵", w:110, color:"#6B4226"},
+    {emoji:"🍄", w:80,  color:"#c0392b"},
+    {emoji:"🌿", w:100, color:"#27ae60"} ],
+  [ {emoji:"🛢️", w:80,  color:"#555"},
+    {emoji:"📺", w:100, color:"#333"},
+    {emoji:"🧱", w:120, color:"#8B4513"} ],
 ];
 
-var STAGE_CFG=[
-  {dist:3000,obstacleInterval:[95,150],obstacleSpeed:3.2,boneInterval:[16,38],bossTime:30,throwMin:60,throwMax:130,bossSpd:0.9,doubleOb:0.10,tripleOb:0.00},
-  {dist:3600,obstacleInterval:[72,118],obstacleSpeed:3.8,boneInterval:[15,34],bossTime:28,throwMin:44,throwMax:100,bossSpd:1.4,doubleOb:0.18,tripleOb:0.00},
-  {dist:4400,obstacleInterval:[54,90], obstacleSpeed:4.5,boneInterval:[13,28],bossTime:26,throwMin:28,throwMax:72, bossSpd:2.0,doubleOb:0.28,tripleOb:0.10},
-  {dist:5400,obstacleInterval:[38,68], obstacleSpeed:5.2,boneInterval:[11,24],bossTime:24,throwMin:14,throwMax:50, bossSpd:2.8,doubleOb:0.38,tripleOb:0.18},
-];
-var BOSSES=[
-  {name:'🍗 치킨 아저씨',emoji:'🍗',pattern:'arc'},
-  {name:'🍖 간식 할머니',emoji:'🍖',pattern:'rapid'},
-  {name:'🌭 소시지 트럭',emoji:'🌭',pattern:'mixed'},
-  {name:'😸 참치 고양이',emoji:'😸',pattern:'random'},
-];
-var FOODS=['🍗','🍖','🌭','🐟','🍕','🍩','🥩','🍔','🍣'];
-var OB_EMOJIS=['🚗','🪨','🌳','🚧','🛺','🪺','🚙','🗑️'];
-var PALETTES=[
-  {sky:'#87CEEB',ground:'#8B5E3C',groundTop:'#5D8A3C',name:'도시 거리'},
-  {sky:'#B8E4F9',ground:'#7A6040',groundTop:'#4A7A30',name:'공원'},
-  {sky:'#1a3a1a',ground:'#3a2a18',groundTop:'#2a5a18',name:'숲길'},
-  {sky:'#2a2a3a',ground:'#444',   groundTop:'#333',   name:'골목'},
+// ═══════════════════════════════════════════════════
+//  스테이지 설정
+// ═══════════════════════════════════════════════════
+const STAGE_CFG = [
+  { dist:3000, obInterval:[95,150], obSpeed:3.2, boneInterval:[16,38],
+    bossTime:30, throwMin:60, throwMax:130, bossSpd:0.9, doubleOb:0.10, tripleOb:0.00 },
+  { dist:3600, obInterval:[72,118], obSpeed:3.8, boneInterval:[15,34],
+    bossTime:28, throwMin:44, throwMax:100, bossSpd:1.4, doubleOb:0.18, tripleOb:0.00 },
+  { dist:4400, obInterval:[54,90],  obSpeed:4.5, boneInterval:[13,28],
+    bossTime:26, throwMin:28, throwMax:72,  bossSpd:2.0, doubleOb:0.28, tripleOb:0.10 },
+  { dist:5400, obInterval:[38,68],  obSpeed:5.2, boneInterval:[11,24],
+    bossTime:24, throwMin:14, throwMax:50,  bossSpd:2.8, doubleOb:0.38, tripleOb:0.18 },
 ];
 
-var scoreToRegister=0;
-var state='title',stageIdx=0,score=0,hp=3,maxHp=3;
-var hitCooldown=0,stageDist=0;
-var totalBones=0,collectedBones=0;
-var bossBonesCaught=0,bossTimeLeft=0,bossMaxTime=0;
-var boss=null,bossAnim=0,nextThrow=0,bossMoveTimer=0;
-var obstacles=[],bones=[],projectiles=[],platforms=[],heartItems=[];
-var obTimer=0,boneTimer=0,platTimer=0,heartSpawnTimer=0;
-var lastHpBonusAt=0,hpFlash=0;
-var cutscene=null,speechBubbles=[],currentTriggers=[];
-var rankingOpen=false;
+const BOSSES = [
+  { name:"🍗 치킨 아저씨", emoji:"🍗", pattern:"arc"    },
+  { name:"🍖 간식 할머니", emoji:"🍖", pattern:"rapid"  },
+  { name:"🌭 소시지 트럭", emoji:"🌭", pattern:"mixed"  },
+  { name:"😸 참치 고양이", emoji:"😸", pattern:"random" },
+];
 
-var dog={x:80,y:GROUND_Y,w:52,h:46,vy:0,jumpsLeft:2,sliding:false,slideTimer:0};
-var dogFrame=0,dogFrameTimer=0;
-var clouds=[{x:100,y:55,s:1},{x:310,y:38,s:.8},{x:560,y:65,s:1.1},{x:430,y:30,s:.7}];
+const FOODS     = ["🍗","🍖","🌭","🐟","🍕","🍩","🥩","🍔","🍣"];
+const OB_EMOJIS = ["🚗","🪨","🌳","🚧","🛺","🪺","🚙","🗑️"];
+const PALETTES  = [
+  { sky:"#87CEEB", ground:"#8B5E3C", groundTop:"#5D8A3C", name:"도시 거리" },
+  { sky:"#B8E4F9", ground:"#7A6040", groundTop:"#4A7A30", name:"공원"      },
+  { sky:"#1a3a1a", ground:"#3a2a18", groundTop:"#2a5a18", name:"숲길"      },
+  { sky:"#2a2a3a", ground:"#444",    groundTop:"#333",    name:"골목"      },
+];
 
-function cfg(){return STAGE_CFG[Math.min(stageIdx,STAGE_CFG.length-1)];}
-function pal(){return PALETTES[Math.min(stageIdx,PALETTES.length-1)];}
-function rand(a,b){return a+Math.random()*(b-a);}
-function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1));}
-function collides(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
-function em(e,x,y,sz){
-  ctx.save();ctx.font=(sz||32)+'px serif';
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(e,x,y);ctx.restore();
+// ═══════════════════════════════════════════════════
+//  게임 상태 변수
+// ═══════════════════════════════════════════════════
+let state          = "title"; // title | cutscene | running | boss | stageClear | bossClear | gameover
+let stageIdx       = 0;
+let score          = 0;
+let hp             = 3;
+let maxHp          = 3;
+let scoreToSave    = 0;  // 게임 종료 시점 점수 고정값
+
+let hitCooldown    = 0;
+let stageDist      = 0;
+let totalBones     = 0;
+let collectedBones = 0;
+
+let bossBonesCaught = 0;
+let bossTimeLeft    = 0;
+let bossMaxTime     = 0;
+let boss            = null;
+let bossAnim        = 0;
+let nextThrow       = 0;
+let bossMoveTimer   = 0;
+
+let obstacles   = [];
+let bones       = [];
+let projectiles = [];
+let platforms   = [];
+let heartItems  = [];
+
+let obTimer         = 0;
+let boneTimer       = 0;
+let platTimer       = 0;
+let heartSpawnTimer = 0;
+
+let lastHpBonusAt = 0;
+let hpFlash       = 0;
+
+let cutscene        = null;
+let speechBubbles   = [];
+let currentTriggers = [];
+
+let rankingOpen = false;
+
+// 강아지 객체
+const dog = { x:80, y:GROUND_Y, w:52, h:46,
+              vy:0, jumpsLeft:2, sliding:false, slideTimer:0 };
+let dogFrame = 0, dogFrameTimer = 0;
+
+let clouds = [
+  {x:100, y:55, s:1},   {x:310, y:38, s:.8},
+  {x:560, y:65, s:1.1}, {x:430, y:30, s:.7},
+];
+
+// ═══════════════════════════════════════════════════
+//  유틸
+// ═══════════════════════════════════════════════════
+const cfg  = () => STAGE_CFG[Math.min(stageIdx, STAGE_CFG.length - 1)];
+const pal  = () => PALETTES [Math.min(stageIdx, PALETTES.length  - 1)];
+const rand    = (a, b) => a + Math.random() * (b - a);
+const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+
+function collides(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x &&
+         a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
-// 컷씬
-function startCutscene(key,onDone){
-  var scenes=CUTSCENES[key];
-  if(!scenes){if(onDone)onDone();return;}
-  cutscene={scenes:scenes,idx:0,onDone:onDone};
-  state='cutscene';hideMsg();
+function drawEmoji(e, x, y, sz = 32) {
+  ctx.save();
+  ctx.font = sz + "px serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(e, x, y);
+  ctx.restore();
 }
-function nextCutscene(){
-  if(!cutscene)return;
+
+// ═══════════════════════════════════════════════════
+//  컷씬
+// ═══════════════════════════════════════════════════
+function startCutscene(key, onDone) {
+  const scenes = CUTSCENES[key];
+  if (!scenes) { if (onDone) onDone(); return; }
+  cutscene = { scenes, idx: 0, onDone };
+  state = "cutscene";
+  hideMsg();
+}
+
+function nextCutscene() {
+  if (!cutscene) return;
   cutscene.idx++;
-  if(cutscene.idx>=cutscene.scenes.length){var cb=cutscene.onDone;cutscene=null;if(cb)cb();}
-}
-function addSpeech(text){speechBubbles=[{text:text,timer:200,maxTimer:200}];}
-function resetTriggers(){
-  var data=SPEECH_TRIGGERS_DATA[Math.min(stageIdx,SPEECH_TRIGGERS_DATA.length-1)]||[];
-  currentTriggers=data.map(function(t){return{dist:t.dist,text:t.text,done:false};});
+  if (cutscene.idx >= cutscene.scenes.length) {
+    const cb = cutscene.onDone;
+    cutscene = null;
+    if (cb) cb();
+  }
 }
 
-// 메시지 (버튼 여러개)
-function showMsg(title,body,buttons){
-  document.getElementById('msgTitle').textContent=title;
-  document.getElementById('msgBody').textContent=body;
-  var ni=document.getElementById('nameInput');
-  var hasName=buttons.some(function(b){return b.needName;});
-  ni.style.display=hasName?'block':'none';
-  if(hasName){ni.value='';setTimeout(function(){ni.focus();},100);}
-  var btns=document.getElementById('msgBtns');
-  btns.innerHTML='';
-  buttons.forEach(function(b){
-    var el=document.createElement('button');
-    el.textContent=b.label;
-    if(b.sub)el.className='sub';
-    el.onclick=function(){
-      if(b.needName)b.action(ni.value.trim()||'무명 강아지');
-      else b.action();
+// ═══════════════════════════════════════════════════
+//  말풍선
+// ═══════════════════════════════════════════════════
+function addSpeech(text) {
+  speechBubbles = [{ text, timer: 200, maxTimer: 200 }];
+}
+
+function resetTriggers() {
+  const data = SPEECH_TRIGGERS[Math.min(stageIdx, SPEECH_TRIGGERS.length - 1)] || [];
+  currentTriggers = data.map(t => ({ ...t, done: false }));
+}
+
+// ═══════════════════════════════════════════════════
+//  메시지 팝업 (버튼 여러 개)
+//  buttons: [{ label, sub?, needName?, action(name?) }]
+// ═══════════════════════════════════════════════════
+function showMsg(title, body, buttons) {
+  document.getElementById("msgTitle").textContent = title;
+  document.getElementById("msgBody").textContent  = body;
+
+  const ni = document.getElementById("nameInput");
+  const needName = buttons.some(b => b.needName);
+  ni.style.display = needName ? "block" : "none";
+  if (needName) { ni.value = ""; setTimeout(() => ni.focus(), 100); }
+
+  const container = document.getElementById("msgBtns");
+  container.innerHTML = "";
+
+  buttons.forEach(b => {
+    const el = document.createElement("button");
+    el.textContent = b.label;
+    if (b.sub) el.className = "sub";
+    el.onclick = () => {
+      hideMsg(); // ✅ 버그수정: 항상 먼저 메시지 닫기
+      if (b.needName) b.action(ni.value.trim() || "무명 강아지");
+      else            b.action();
     };
-    btns.appendChild(el);
+    container.appendChild(el);
   });
-  document.getElementById('message').style.display='block';
-}
-function hideMsg(){document.getElementById('message').style.display='none';}
 
-// 랭킹
-async function openRanking(){
-  rankingOpen=true;
-  document.getElementById('rankPanel').style.display='block';
-  document.getElementById('rankList').innerHTML='<li style="justify-content:center;color:#888">불러오는 중... 🐾</li>';
-  var data=window.loadRankingDB?await window.loadRankingDB():[];
+  document.getElementById("message").style.display = "block";
+}
+
+function hideMsg() {
+  document.getElementById("message").style.display = "none";
+}
+
+// ═══════════════════════════════════════════════════
+//  랭킹
+// ═══════════════════════════════════════════════════
+async function openRanking() {
+  rankingOpen = true;
+  document.getElementById("rankPanel").style.display = "block";
+  document.getElementById("rankList").innerHTML =
+    '<li style="justify-content:center;color:#888">불러오는 중... 🐾</li>';
+  const data = window.loadRankingDB ? await window.loadRankingDB() : [];
   renderRankList(data);
 }
-function closeRanking(){
-  rankingOpen=false;
-  document.getElementById('rankPanel').style.display='none';
-  if(state!=='running'&&state!=='boss')state='title';
+
+function closeRanking() {
+  rankingOpen = false;
+  document.getElementById("rankPanel").style.display = "none";
+  // 랭킹 닫아도 게임 상태는 그대로 유지 (타이틀/진행 중 모두 OK)
 }
-function renderRankList(data){
-  var ul=document.getElementById('rankList');
-  ul.innerHTML='';
-  if(!data||data.length===0){
-    var li=document.createElement('li');
-    li.style.cssText='justify-content:center;color:#888';
-    li.textContent='아직 기록이 없어요 🐾';ul.appendChild(li);return;
+
+function renderRankList(data) {
+  const ul = document.getElementById("rankList");
+  ul.innerHTML = "";
+  if (!data || data.length === 0) {
+    const li = document.createElement("li");
+    li.style.cssText = "justify-content:center;color:#888";
+    li.textContent = "아직 기록이 없어요 🐾";
+    ul.appendChild(li); return;
   }
-  var medals=['🥇','🥈','🥉'],cls=['gold','silver','bronze'];
-  data.forEach(function(r,i){
-    var li=document.createElement('li');
-    if(i<3)li.className=cls[i];
-    var rank=document.createElement('span');rank.className='rrank';rank.textContent=medals[i]||(i+1);
-    var name=document.createElement('span');name.className='rname';name.textContent=r.name;
-    var sc=document.createElement('span');sc.className='rscore';sc.textContent='🦴'+r.score;
-    var dt=document.createElement('span');dt.style.cssText='font-size:11px;color:#666;margin-left:6px';dt.textContent=r.date;
-    li.append(rank,name,sc,dt);ul.appendChild(li);
+  const medals = ["🥇","🥈","🥉"];
+  const cls    = ["gold","silver","bronze"];
+  data.forEach((r, i) => {
+    const li   = document.createElement("li");
+    if (i < 3) li.className = cls[i];
+    const rank = document.createElement("span"); rank.className = "rrank"; rank.textContent = medals[i] || (i + 1);
+    const name = document.createElement("span"); name.className = "rname"; name.textContent = r.name;
+    const sc   = document.createElement("span"); sc.className   = "rscore"; sc.textContent = "🦴" + r.score;
+    const dt   = document.createElement("span"); dt.style.cssText = "font-size:11px;color:#666;margin-left:6px"; dt.textContent = r.date;
+    li.append(rank, name, sc, dt);
+    ul.appendChild(li);
   });
 }
 
-// 터치
-var isMobile=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
-if(isMobile)document.getElementById('touchControls').classList.add('show');
-var touchKeys={left:false,right:false};
-function setupTouchBtn(id,downFn,upFn){
-  var el=document.getElementById(id);
-  var down=function(e){e.preventDefault();if(downFn)downFn();};
-  var up=function(e){e.preventDefault();if(upFn)upFn();};
-  el.addEventListener('touchstart',down,{passive:false});
-  el.addEventListener('touchend',up,{passive:false});
-  el.addEventListener('mousedown',down);el.addEventListener('mouseup',up);
-}
-setupTouchBtn('btnLeft',function(){touchKeys.left=true;},function(){touchKeys.left=false;});
-setupTouchBtn('btnRight',function(){touchKeys.right=true;},function(){touchKeys.right=false;});
-setupTouchBtn('btnJump',function(){
-  if(state==='title'&&!rankingOpen){hideMsg();startCutscene('stage0_intro',function(){state='running';initStage();});return;}
-  if(state==='cutscene'){nextCutscene();return;}
-  if(!dog.sliding&&dog.jumpsLeft>0){dog.vy=dog.jumpsLeft===2?-13.5:-11;dog.jumpsLeft--;}
-},null);
-setupTouchBtn('btnSlide',function(){
-  if(!dog.sliding&&dog.jumpsLeft===2){dog.sliding=true;dog.slideTimer=28;}
-},null);
+// ═══════════════════════════════════════════════════
+//  터치 & 키보드 입력
+// ═══════════════════════════════════════════════════
+const isMobile = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+if (isMobile) document.getElementById("touchControls").classList.add("show");
 
-var nameInput=document.getElementById('nameInput');
-var keys={};
-document.addEventListener('keydown',function(e){
-  if(document.activeElement===nameInput)return;
-  if(state==='cutscene'){nextCutscene();return;}
-  if(rankingOpen)return;
-  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.code)>=0)e.preventDefault();
-  if(!keys[e.code]){
-    if((e.code==='ArrowUp'||e.code==='Space')&&!dog.sliding&&dog.jumpsLeft>0){
-      dog.vy=dog.jumpsLeft===2?-13.5:-11;dog.jumpsLeft--;
+const touchKeys = { left: false, right: false };
+
+function setupTouch(id, downFn, upFn) {
+  const el = document.getElementById(id);
+  const dn = e => { e.preventDefault(); if (downFn) downFn(); };
+  const up = e => { e.preventDefault(); if (upFn)   upFn();   };
+  el.addEventListener("touchstart", dn, { passive: false });
+  el.addEventListener("touchend",   up, { passive: false });
+  el.addEventListener("mousedown",  dn);
+  el.addEventListener("mouseup",    up);
+}
+
+setupTouch("btnLeft",  () => touchKeys.left  = true,  () => touchKeys.left  = false);
+setupTouch("btnRight", () => touchKeys.right = true,  () => touchKeys.right = false);
+setupTouch("btnJump",  () => {
+  if (state === "cutscene")              { nextCutscene(); return; }
+  if (state === "title" && !rankingOpen) { hideMsg(); startCutscene("stage0_intro", () => { state = "running"; initStage(); }); return; }
+  if (!dog.sliding && dog.jumpsLeft > 0) { dog.vy = dog.jumpsLeft === 2 ? -13.5 : -11; dog.jumpsLeft--; }
+}, null);
+setupTouch("btnSlide", () => {
+  if (!dog.sliding && dog.jumpsLeft === 2) { dog.sliding = true; dog.slideTimer = 28; }
+}, null);
+
+const nameInput = document.getElementById("nameInput");
+const keys = {};
+
+document.addEventListener("keydown", e => {
+  if (document.activeElement === nameInput) return; // 닉네임 입력 중 키 차단
+  if (state === "cutscene") { nextCutscene(); return; }
+  if (rankingOpen) return;
+  if (["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code)) e.preventDefault();
+  if (!keys[e.code]) {
+    if ((e.code === "ArrowUp" || e.code === "Space") && !dog.sliding && dog.jumpsLeft > 0) {
+      dog.vy = dog.jumpsLeft === 2 ? -13.5 : -11;
+      dog.jumpsLeft--;
     }
-    if(e.code==='ArrowDown'&&!dog.sliding&&dog.jumpsLeft===2){dog.sliding=true;dog.slideTimer=28;}
-    if(state==='title'&&!rankingOpen){hideMsg();startCutscene('stage0_intro',function(){state='running';initStage();});}
+    if (e.code === "ArrowDown" && !dog.sliding && dog.jumpsLeft === 2) {
+      dog.sliding = true; dog.slideTimer = 28;
+    }
+    if (state === "title") {
+      hideMsg();
+      startCutscene("stage0_intro", () => { state = "running"; initStage(); });
+    }
   }
-  keys[e.code]=true;
+  keys[e.code] = true;
 });
-document.addEventListener('keyup',function(e){keys[e.code]=false;});
-canvas.addEventListener('click',function(){if(state==='cutscene')nextCutscene();});
 
-function initStage(){
-  obstacles=[];bones=[];projectiles=[];platforms=[];speechBubbles=[];heartItems=[];
-  obTimer=90;boneTimer=8;platTimer=80;
-  heartSpawnTimer=randInt(HEART_SPAWN_MIN,HEART_SPAWN_MAX);
-  stageDist=0;totalBones=0;collectedBones=0;
-  document.getElementById('boneGoal').style.display='none';
-  dog.x=80;resetDog();resetTriggers();
+document.addEventListener("keyup", e => { keys[e.code] = false; });
+canvas.addEventListener("click",   ()  => { if (state === "cutscene") nextCutscene(); });
+
+// ═══════════════════════════════════════════════════
+//  초기화 함수들
+// ═══════════════════════════════════════════════════
+function initStage() {
+  obstacles = []; bones = []; projectiles = [];
+  platforms = []; heartItems = []; speechBubbles = [];
+  obTimer   = 90;
+  boneTimer = 8;
+  platTimer = 80;
+  heartSpawnTimer = randInt(HEART_SPAWN_MIN, HEART_SPAWN_MAX);
+  stageDist      = 0;
+  totalBones     = 0;
+  collectedBones = 0;
+  document.getElementById("boneGoal").style.display = "none";
+  dog.x = 80;
+  resetDog();
+  resetTriggers();
 }
-function resetDog(){dog.y=GROUND_Y;dog.vy=0;dog.jumpsLeft=2;dog.sliding=false;dog.slideTimer=0;}
-function initBoss(){
-  var b=BOSSES[Math.min(stageIdx,BOSSES.length-1)];
-  var c=cfg();
-  bossMaxTime=c.bossTime;bossTimeLeft=c.bossTime;
-  bossAnim=0;projectiles=[];bossBonesCaught=0;nextThrow=randInt(30,70);
-  boss={x:W-110,y:GROUND_Y+dog.h-60,tx:W-110,ty:GROUND_Y+dog.h-60,emoji:b.emoji,pattern:b.pattern,name:b.name};
-  bossMoveTimer=0;resetBossMoveTarget();dog.x=80;resetDog();
-  document.getElementById('boneGoal').style.display='block';
+
+function resetDog() {
+  dog.y = GROUND_Y; dog.vy = 0;
+  dog.jumpsLeft = 2; dog.sliding = false; dog.slideTimer = 0;
 }
-function resetBossMoveTarget(){
-  boss.tx=rand(W*0.56,W-65);boss.ty=rand(GROUND_Y-150,GROUND_Y+dog.h-25);
-  bossMoveTimer=randInt(90,200);
+
+function initBoss() {
+  const b = BOSSES[Math.min(stageIdx, BOSSES.length - 1)];
+  const c = cfg();
+  bossMaxTime     = c.bossTime;
+  bossTimeLeft    = c.bossTime;
+  bossAnim        = 0;
+  projectiles     = [];
+  bossBonesCaught = 0;
+  nextThrow       = randInt(30, 70);
+  boss = {
+    x: W - 110, y: GROUND_Y + dog.h - 60,
+    tx: W - 110, ty: GROUND_Y + dog.h - 60,
+    emoji: b.emoji, pattern: b.pattern, name: b.name,
+  };
+  bossMoveTimer = 0;
+  resetBossMoveTarget();
+  dog.x = 80;
+  resetDog();
+  document.getElementById("boneGoal").style.display = "block";
 }
-function spawnPlatform(){
-  var themes=PLATFORM_THEMES[Math.min(stageIdx,PLATFORM_THEMES.length-1)];
-  var t=themes[randInt(0,themes.length-1)];
-  platforms.push({x:W+20,y:GROUND_Y-rand(70,175),w:t.w,h:16,emoji:t.emoji,color:t.color,hasBone:Math.random()<0.55});
+
+function resetBossMoveTarget() {
+  boss.tx = rand(W * 0.56, W - 65);
+  boss.ty = rand(GROUND_Y - 150, GROUND_Y + dog.h - 25);
+  bossMoveTimer = randInt(90, 200);
 }
-function spawnBossThrow(){
-  if(!boss)return;
-  var c=cfg();
-  var isBone=Math.random()<(0.60-stageIdx*0.05);
-  var food=isBone?'🦴':FOODS[randInt(0,FOODS.length-1)];
-  var sz=rand(20,34),bx=boss.x-30,by=boss.y-20,vScale=1+stageIdx*0.18,pat=boss.pattern;
-  function push(vx,vy,grav,sy){
-    projectiles.push({x:bx,y:sy!==undefined?sy:by,vx:vx,vy:vy,grav:grav,emoji:food,size:sz,isBone:isBone,life:PROJ_LIFE});
+
+// ═══════════════════════════════════════════════════
+//  스폰 함수들
+// ═══════════════════════════════════════════════════
+function spawnPlatform() {
+  const themes = PLATFORM_THEMES[Math.min(stageIdx, PLATFORM_THEMES.length - 1)];
+  const t      = themes[randInt(0, themes.length - 1)];
+  platforms.push({
+    x: W + 20,
+    y: GROUND_Y - rand(70, 175),
+    w: t.w, h: 16,
+    emoji: t.emoji, color: t.color,
+    hasBone: Math.random() < 0.55,
+  });
+}
+
+function spawnBossThrow() {
+  if (!boss) return;
+  const c      = cfg();
+  const isBone = Math.random() < (0.60 - stageIdx * 0.05);
+  const food   = isBone ? "🦴" : FOODS[randInt(0, FOODS.length - 1)];
+  const sz     = rand(20, 34);
+  const bx     = boss.x - 30;
+  const by     = boss.y - 20;
+  const vS     = 1 + stageIdx * 0.18; // 속도 스케일
+
+  function push(vx, vy, grav, sy) {
+    projectiles.push({
+      x: bx, y: sy !== undefined ? sy : by,
+      vx, vy, grav,
+      emoji: food, size: sz, isBone, life: PROJ_LIFE,
+    });
   }
-  if(pat==='arc'){
-    push(rand(-5,-3)*vScale,rand(-10,-6),rand(.32,.48));
-    if(Math.random()<0.2+stageIdx*0.08)push(rand(-4.5,-2.5)*vScale,rand(-8,-5),rand(.28,.44));
-  } else if(pat==='rapid'){
-    var cnt=randInt(stageIdx>2?2:1,2+stageIdx);
-    for(var i=0;i<cnt;i++)push(rand(-6,-3.5)*vScale,rand(-3,3),rand(0,.18),by-i*22);
-  } else if(pat==='mixed'){
-    push(rand(-5,-3)*vScale,rand(-9,-5),rand(.33,.46));
-    if(Math.random()<0.5+stageIdx*0.1)push(rand(-5,-3.5)*vScale,0,0,GROUND_Y+dog.h-14);
-    if(stageIdx>=2&&Math.random()<0.35)push(rand(-4,-2)*vScale,rand(-7,-4),rand(.3,.44));
-  } else {
-    var cnt2=randInt(1+Math.floor(stageIdx/2),2+stageIdx);
-    for(var j=0;j<cnt2;j++){
-      var spd=rand(4,8+stageIdx)*vScale,a=rand(145,215)*Math.PI/180;
-      push(Math.cos(a)*spd,Math.sin(a)*spd-rand(0,5),rand(.2,.44));
+
+  switch (boss.pattern) {
+    case "arc":
+      push(rand(-5,-3)*vS, rand(-10,-6), rand(.32,.48));
+      if (Math.random() < 0.2 + stageIdx*0.08)
+        push(rand(-4.5,-2.5)*vS, rand(-8,-5), rand(.28,.44));
+      break;
+    case "rapid": {
+      const cnt = randInt(stageIdx > 2 ? 2 : 1, 2 + stageIdx);
+      for (let i = 0; i < cnt; i++) push(rand(-6,-3.5)*vS, rand(-3,3), rand(0,.18), by - i*22);
+      break;
+    }
+    case "mixed":
+      push(rand(-5,-3)*vS, rand(-9,-5), rand(.33,.46));
+      if (Math.random() < 0.5 + stageIdx*0.1) push(rand(-5,-3.5)*vS, 0, 0, GROUND_Y + dog.h - 14);
+      if (stageIdx >= 2 && Math.random() < 0.35) push(rand(-4,-2)*vS, rand(-7,-4), rand(.3,.44));
+      break;
+    case "random": {
+      const cnt2 = randInt(1 + Math.floor(stageIdx/2), 2 + stageIdx);
+      for (let j = 0; j < cnt2; j++) {
+        const spd = rand(4, 8 + stageIdx) * vS;
+        const a   = rand(145, 215) * Math.PI / 180;
+        push(Math.cos(a)*spd, Math.sin(a)*spd - rand(0,5), rand(.2,.44));
+      }
+      break;
     }
   }
-  if(Math.random()<0.35+stageIdx*0.05)push(rand(-5,-2.5)*vScale,rand(-9,-5),rand(.3,.45));
-  nextThrow=Math.random()<(0.2+stageIdx*0.05)?randInt(10,24):randInt(c.throwMin,c.throwMax);
+  // 추가 뼈다귀 투척
+  if (Math.random() < 0.35 + stageIdx*0.05) push(rand(-5,-2.5)*vS, rand(-9,-5), rand(.3,.45));
+  // 다음 투척 타이밍
+  nextThrow = Math.random() < (0.2 + stageIdx*0.05)
+    ? randInt(10, 24)
+    : randInt(c.throwMin, c.throwMax);
 }
 
-function update(){
-  if(state==='cutscene'||rankingOpen)return;
-  if(state!=='running'&&state!=='boss')return;
-  hitCooldown=Math.max(0,hitCooldown-1);
-  hpFlash=Math.max(0,hpFlash-1);
-  clouds.forEach(function(c){c.x-=.35;if(c.x<-90)c.x=W+90;});
-  if(dog.slideTimer>0){dog.slideTimer--;if(dog.slideTimer===0)dog.sliding=false;}
-  var maxX=state==='boss'?W/2-30:W/2-40;
-  if(keys['ArrowLeft']||touchKeys.left)  dog.x=Math.max(20,dog.x-4);
-  if(keys['ArrowRight']||touchKeys.right)dog.x=Math.min(maxX,dog.x+4);
-  dog.vy+=0.62;dog.y+=dog.vy;
-  if(dog.y>=GROUND_Y){dog.y=GROUND_Y;dog.vy=0;dog.jumpsLeft=2;}
-  // 발판 착지
-  if(state==='running'){
-    for(var pi=0;pi<platforms.length;pi++){
-      var p=platforms[pi];
-      var dogL=dog.x+10,dogR=dog.x+dog.w-10;
-      var dogBottom=dog.y+dog.h,prevBottom=dogBottom-dog.vy;
-      if(dogR>p.x&&dogL<p.x+p.w&&dog.vy>=0&&prevBottom<=p.y+6&&dogBottom>=p.y){
-        dog.y=p.y-dog.h;dog.vy=0;dog.jumpsLeft=2;
+// ═══════════════════════════════════════════════════
+//  메인 업데이트 루프
+// ═══════════════════════════════════════════════════
+function update() {
+  if (state === "cutscene" || rankingOpen)             return;
+  if (state !== "running"  && state !== "boss")        return;
+
+  hitCooldown = Math.max(0, hitCooldown - 1);
+  hpFlash     = Math.max(0, hpFlash - 1);
+
+  clouds.forEach(c => { c.x -= .35; if (c.x < -90) c.x = W + 90; });
+
+  // 슬라이드 타이머
+  if (dog.slideTimer > 0) { dog.slideTimer--; if (dog.slideTimer === 0) dog.sliding = false; }
+
+  // 좌우 이동
+  const maxX = state === "boss" ? W/2 - 30 : W/2 - 40;
+  if (keys["ArrowLeft"]  || touchKeys.left)  dog.x = Math.max(20,   dog.x - 4);
+  if (keys["ArrowRight"] || touchKeys.right) dog.x = Math.min(maxX, dog.x + 4);
+
+  // 중력 & 이동
+  dog.vy += 0.62;
+  dog.y  += dog.vy;
+
+  // 지면 착지
+  if (dog.y >= GROUND_Y) { dog.y = GROUND_Y; dog.vy = 0; dog.jumpsLeft = 2; }
+
+  // 발판 착지 (위에서 내려올 때만)
+  if (state === "running") {
+    for (const p of platforms) {
+      const dogL   = dog.x + 10;
+      const dogR   = dog.x + dog.w - 10;
+      const bottom = dog.y + dog.h;
+      const prev   = bottom - dog.vy;
+      if (dogR > p.x && dogL < p.x + p.w && dog.vy >= 0 && prev <= p.y + 6 && bottom >= p.y) {
+        dog.y = p.y - dog.h;
+        dog.vy = 0;
+        dog.jumpsLeft = 2;
       }
     }
   }
-  for(var si=0;si<speechBubbles.length;si++)speechBubbles[si].timer--;
-  speechBubbles=speechBubbles.filter(function(b){return b.timer>0;});
-  if(state==='running'){
-    for(var ti=0;ti<currentTriggers.length;ti++){
-      var t=currentTriggers[ti];
-      if(!t.done&&stageDist>=t.dist){t.done=true;addSpeech(t.text);}
-    }
-  }
-  if(state==='running')runUpdate();
-  else bossUpdate();
-  var th=lastHpBonusAt+HP_BONUS_EVERY;
-  if(score>=th){hp=Math.min(hp+1,5);maxHp=Math.max(maxHp,hp);lastHpBonusAt=th;hpFlash=90;}
-}
 
-function runUpdate(){
-  var c=cfg(),spd=c.obstacleSpeed;
-  stageDist+=2.2;
-  platTimer--;if(platTimer<=0){spawnPlatform();platTimer=randInt(180,340);}
-  obTimer--;
-  if(obTimer<=0){
-    var sc=rand(.6,1.8+stageIdx*.12);
-    obstacles.push({x:W+20,y:GROUND_Y+dog.h,w:44*sc,h:rand(28,55+stageIdx*3)*sc,emoji:OB_EMOJIS[randInt(0,OB_EMOJIS.length-1)],size:28*sc});
-    if(Math.random()<c.doubleOb){var s2=rand(.5,1.4);obstacles.push({x:W+90+rand(0,40),y:GROUND_Y+dog.h,w:44*s2,h:rand(24,50)*s2,emoji:OB_EMOJIS[randInt(0,OB_EMOJIS.length-1)],size:28*s2});}
-    if(Math.random()<c.tripleOb){var s3=rand(.4,1.2);obstacles.push({x:W+170+rand(0,40),y:GROUND_Y+dog.h,w:44*s3,h:rand(20,46)*s3,emoji:OB_EMOJIS[randInt(0,OB_EMOJIS.length-1)],size:28*s3});}
-    obTimer=randInt(c.obstacleInterval[0],c.obstacleInterval[1]);
-  }
-  boneTimer--;
-  if(boneTimer<=0){
-    var cnt=randInt(2,5);
-    for(var i=0;i<cnt;i++){bones.push({x:W+10+i*34,y:GROUND_Y-rand(14,85)});totalBones++;}
-    boneTimer=randInt(c.boneInterval[0],c.boneInterval[1]);
-  }
-  heartSpawnTimer--;
-  if(heartSpawnTimer<=0){
-    heartItems.push({x:W+20,y:rand(GROUND_Y-160,GROUND_Y-40),timer:0,phase:Math.random()*Math.PI*2});
-    heartSpawnTimer=randInt(HEART_SPAWN_MIN,HEART_SPAWN_MAX);
-  }
-  heartItems.forEach(function(h){h.x-=spd;h.timer++;h.y+=Math.sin(h.phase+h.timer*0.04)*0.6;});
-  heartItems=heartItems.filter(function(h){return h.x>-40;});
-  platforms.forEach(function(p){p.x-=spd;});
-  obstacles.forEach(function(o){o.x-=spd;});
-  bones.forEach(function(b){b.x-=spd;});
-  platforms=platforms.filter(function(p){return p.x>-200;});
-  obstacles=obstacles.filter(function(o){return o.x>-100;});
-  platforms.forEach(function(p){
-    if(p.hasBone){
-      var bx=p.x+p.w/2,by=p.y-18,dcx=dog.x+dog.w/2,dcy=dog.y+dog.h/2;
-      if(Math.abs(dcx-bx)<32&&Math.abs(dcy-by)<32){p.hasBone=false;score+=10;collectedBones++;}
+  // 말풍선 업데이트
+  speechBubbles.forEach(b => b.timer--);
+  speechBubbles = speechBubbles.filter(b => b.timer > 0);
+
+  // 말풍선 트리거 (달리는 중만)
+  if (state === "running") {
+    for (const t of currentTriggers) {
+      if (!t.done && stageDist >= t.dist) { t.done = true; addSpeech(t.text); }
     }
-  });
-  var dh=dog.sliding?dog.h-22:dog.h-6,dy2=dog.sliding?dog.y+18:dog.y+3;
-  var dr={x:dog.x+10,y:dy2,w:dog.w-20,h:dh};
-  heartItems=heartItems.filter(function(h){
-    var hr={x:h.x-18,y:h.y-18,w:36,h:36};
-    if(collides(dr,hr)){hp=Math.min(hp+1,5);maxHp=Math.max(maxHp,hp);hpFlash=90;return false;}
-    return true;
-  });
-  if(hitCooldown===0){
-    var hit=false;
-    obstacles.forEach(function(o){
-      if(hit)return;
-      var or={x:o.x+6,y:o.y-o.h+6,w:o.w-12,h:o.h-8};
-      if(collides(dr,or)){hit=true;hp--;hitCooldown=90;if(hp<=0)gameOver();}
-    });
   }
-  bones=bones.filter(function(b){
-    var br={x:b.x-12,y:b.y-12,w:24,h:24};
-    if(collides(dr,br)){score+=10;collectedBones++;return false;}
-    return b.x>-30;
-  });
-  if(stageDist>=c.dist){
-    var pct=totalBones>0?collectedBones/totalBones:1;
-    if(pct>=BONE_GOAL_PCT){
-      state='stageClear';
-      showMsg('✨ 구간 통과!','뼈다귀 '+collectedBones+'/'+totalBones+'개 획득!\n다음은 '+BOSSES[Math.min(stageIdx,BOSSES.length-1)].name+'가 기다려요!',[
-        {label:'보스 만나러 가기!',action:function(){
-          var key='boss'+stageIdx+'_intro';
-          if(CUTSCENES[key]){startCutscene(key,function(){state='boss';initBoss();});}
-          else{state='boss';initBoss();}
-        }}
-      ]);
-    } else {
-      state='stageClear';
-      showMsg('😅 뼈다귀가 부족해요!',collectedBones+'/'+totalBones+'개 획득 (필요: 30%)\n다시 달려볼까요?',[
-        {label:'다시 시도',action:function(){hp=3;score=0;lastHpBonusAt=0;state='running';initStage();}}
-      ]);
-    }
+
+  if (state === "running") runUpdate();
+  else                     bossUpdate();
+
+  // 하트 보너스 (500점마다)
+  const bonusTh = lastHpBonusAt + HP_BONUS_SCORE;
+  if (score >= bonusTh) {
+    hp = Math.min(hp + 1, 5);
+    maxHp = Math.max(maxHp, hp);
+    lastHpBonusAt = bonusTh;
+    hpFlash = 90;
   }
 }
 
-function bossUpdate(){
-  bossTimeLeft-=1/60;bossAnim=(bossAnim+1)%60;
-  bossMoveTimer--;if(bossMoveTimer<=0)resetBossMoveTarget();
-  var dx=boss.tx-boss.x,dy=boss.ty-boss.y,dist=Math.sqrt(dx*dx+dy*dy);
-  if(dist>2){boss.x+=dx/dist*cfg().bossSpd;boss.y+=dy/dist*cfg().bossSpd;}
-  nextThrow--;if(nextThrow<=0)spawnBossThrow();
-  projectiles.forEach(function(p){
-    p.x+=p.vx;p.y+=p.vy;p.vy+=p.grav;p.life--;
-    if(p.y>=GROUND_Y+dog.h-10){p.y=GROUND_Y+dog.h-10;p.vy*=-.25;p.vx*=.65;
-      if(Math.abs(p.vy)<.5)p.vy=0;if(Math.abs(p.vx)<.3)p.vx=0;}
+// ═══════════════════════════════════════════════════
+//  달리기 업데이트
+// ═══════════════════════════════════════════════════
+function runUpdate() {
+  const c   = cfg();
+  const spd = c.obSpeed;
+  stageDist += 2.2;
+
+  // 발판 스폰
+  if (--platTimer <= 0) { spawnPlatform(); platTimer = randInt(180, 340); }
+
+  // 장애물 스폰
+  if (--obTimer <= 0) {
+    const sc = rand(.6, 1.8 + stageIdx * .12);
+    obstacles.push({ x:W+20, y:GROUND_Y+dog.h,
+      w:44*sc, h:rand(28,55+stageIdx*3)*sc,
+      emoji:OB_EMOJIS[randInt(0,OB_EMOJIS.length-1)], size:28*sc });
+    if (Math.random() < c.doubleOb) {
+      const s2 = rand(.5,1.4);
+      obstacles.push({ x:W+90+rand(0,40), y:GROUND_Y+dog.h,
+        w:44*s2, h:rand(24,50)*s2,
+        emoji:OB_EMOJIS[randInt(0,OB_EMOJIS.length-1)], size:28*s2 });
+    }
+    if (Math.random() < c.tripleOb) {
+      const s3 = rand(.4,1.2);
+      obstacles.push({ x:W+170+rand(0,40), y:GROUND_Y+dog.h,
+        w:44*s3, h:rand(20,46)*s3,
+        emoji:OB_EMOJIS[randInt(0,OB_EMOJIS.length-1)], size:28*s3 });
+    }
+    obTimer = randInt(c.obInterval[0], c.obInterval[1]);
+  }
+
+  // 뼈다귀 스폰
+  if (--boneTimer <= 0) {
+    const cnt = randInt(2, 5);
+    for (let i = 0; i < cnt; i++) {
+      bones.push({ x: W + 10 + i * 34, y: GROUND_Y - rand(14, 85) });
+      totalBones++;
+    }
+    boneTimer = randInt(c.boneInterval[0], c.boneInterval[1]);
+  }
+
+  // 하트 스폰
+  if (--heartSpawnTimer <= 0) {
+    heartItems.push({ x:W+20, y:rand(GROUND_Y-160, GROUND_Y-40), timer:0, phase:Math.random()*Math.PI*2 });
+    heartSpawnTimer = randInt(HEART_SPAWN_MIN, HEART_SPAWN_MAX);
+  }
+
+  // 이동
+  platforms.forEach(p  => p.x  -= spd);
+  obstacles.forEach(o  => o.x  -= spd);
+  bones.forEach(b      => b.x  -= spd);
+  heartItems.forEach(h => { h.x -= spd; h.timer++; h.y += Math.sin(h.phase + h.timer * 0.04) * 0.6; });
+
+  // 필터
+  platforms  = platforms.filter(p => p.x > -200);
+  obstacles  = obstacles.filter(o => o.x > -100);
+  heartItems = heartItems.filter(h => h.x > -40);
+
+  // 히트박스
+  const dh = dog.sliding ? dog.h - 22 : dog.h - 6;
+  const dy = dog.sliding ? dog.y + 18 : dog.y + 3;
+  const dr = { x: dog.x + 10, y: dy, w: dog.w - 20, h: dh };
+
+  // 발판 위 뼈다귀 수집
+  platforms.forEach(p => {
+    if (!p.hasBone) return;
+    const bx = p.x + p.w / 2, by = p.y - 18;
+    const dcx = dog.x + dog.w / 2, dcy = dog.y + dog.h / 2;
+    if (Math.abs(dcx - bx) < 32 && Math.abs(dcy - by) < 32) {
+      p.hasBone = false; score += 10; collectedBones++;
+      // ✅ 버그수정: 발판 뼈다귀도 totalBones에 포함
+      totalBones++;
+    }
   });
-  projectiles=projectiles.filter(function(p){return p.life>0&&p.x>-50&&p.x<W+50;});
-  var dh2=dog.sliding?dog.h-22:dog.h-6,dy3=dog.sliding?dog.y+18:dog.y+3;
-  var dr={x:dog.x+10,y:dy3,w:dog.w-20,h:dh2};
-  var bossHit=false;
-  projectiles=projectiles.filter(function(p){
-    var pr={x:p.x-13,y:p.y-13,w:26,h:26};
-    if(collides(dr,pr)){
-      if(p.isBone){bossBonesCaught++;score+=10;}
-      else if(hitCooldown===0&&!bossHit){bossHit=true;hp--;hitCooldown=80;if(hp<=0)gameOver();}
+
+  // 하트 획득
+  heartItems = heartItems.filter(h => {
+    const hr = { x: h.x-18, y: h.y-18, w:36, h:36 };
+    if (collides(dr, hr)) {
+      hp = Math.min(hp + 1, 5); maxHp = Math.max(maxHp, hp); hpFlash = 90;
       return false;
     }
     return true;
   });
-  if(bossBonesCaught>=BOSS_BONE_GOAL){
-    state='bossClear';
-    var isLast=stageIdx>=BOSSES.length-1;
-    if(isLast){
-      scoreToRegister=score;
-      showMsg('🎉 모든 스테이지 클리어!','집에 도착했어요! 🏠\n최종 점수: 🦴 '+scoreToRegister+'\n\n닉네임을 입력하고 랭킹에 등록하세요!',[
-        {label:'🏆 랭킹 등록!',needName:true,action:async function(name){
-          if(window.saveRankingDB)await window.saveRankingDB(name,scoreToRegister);
-          stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;scoreToRegister=0;state='title';
-          await openRanking();
-        }},
-        {label:'처음부터 다시',sub:true,action:function(){stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;state='running';initStage();}}
-      ]);
-    } else {
-      showMsg('🎉 보스 격파!','뼈다귀 '+bossBonesCaught+'개 캐치!\n유혹을 이겨냈어요! 계속 달려요!',[
-        {label:'다음 스테이지!',action:function(){stageIdx++;state='running';initStage();}}
-      ]);
+
+  // 장애물 충돌 (프레임당 1회만)
+  if (hitCooldown === 0) {
+    let hit = false;
+    for (const o of obstacles) {
+      if (hit) break;
+      const or = { x:o.x+6, y:o.y-o.h+6, w:o.w-12, h:o.h-8 };
+      if (collides(dr, or)) { hit = true; hp--; hitCooldown = 90; if (hp <= 0) gameOver(); }
     }
-  } else if(bossTimeLeft<=0){
-    state='bossClear';
-    showMsg('🦴 뼈다귀가 부족해요!',bossBonesCaught+'/'+BOSS_BONE_GOAL+'개 캐치\n🦴를 '+BOSS_BONE_GOAL+'개 이상 잡아야 해요!',[
-      {label:'다시 도전!',action:function(){hp=3;score=0;lastHpBonusAt=0;state='boss';initBoss();}}
-    ]);
+  }
+
+  // 뼈다귀 수집
+  bones = bones.filter(b => {
+    const br = { x:b.x-12, y:b.y-12, w:24, h:24 };
+    if (collides(dr, br)) { score += 10; collectedBones++; return false; }
+    return b.x > -30;
+  });
+
+  // 스테이지 클리어 판정
+  if (stageDist >= c.dist) {
+    const pct = totalBones > 0 ? collectedBones / totalBones : 1;
+    state = "stageClear";
+    if (pct >= BONE_GOAL_PCT) {
+      const bossKey = "boss" + stageIdx + "_intro";
+      showMsg(
+        "✨ 구간 통과!",
+        "뼈다귀 " + collectedBones + "/" + totalBones + "개 획득!\n" +
+        "다음은 " + BOSSES[Math.min(stageIdx, BOSSES.length-1)].name + "가 기다려요!",
+        [{
+          label: "보스 만나러 가기!",
+          action: () => {
+            if (CUTSCENES[bossKey]) startCutscene(bossKey, () => { state = "boss"; initBoss(); });
+            else                    { state = "boss"; initBoss(); }
+          },
+        }]
+      );
+    } else {
+      showMsg(
+        "😅 뼈다귀가 부족해요!",
+        collectedBones + "/" + totalBones + "개 획득 (필요: 30%)\n다시 달려볼까요?",
+        [{
+          label: "다시 시도",
+          action: () => { hp = 3; score = 0; lastHpBonusAt = 0; state = "running"; initStage(); },
+        }]
+      );
+    }
   }
 }
 
-function gameOver(){
-  state='gameover';
-  scoreToRegister=score;
-  showMsg('😢 게임 오버','뼈다귀 '+score+'개\n스테이지 '+(stageIdx+1)+'에서 쓰러졌어요...',[
-    {label:'이어서 하기 (현재 스테이지)',action:function(){hp=3;state='running';initStage();}},
-    {label:'🏆 랭킹 등록 후 처음부터',sub:true,needName:true,action:async function(name){
-      if(window.saveRankingDB)await window.saveRankingDB(name,scoreToRegister);
-      stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;scoreToRegister=0;state='title';
-      await openRanking();
-    }},
-    {label:'그냥 처음부터',sub:true,action:function(){stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;state='running';initStage();}}
-  ]);
+// ═══════════════════════════════════════════════════
+//  보스 업데이트
+// ═══════════════════════════════════════════════════
+function bossUpdate() {
+  bossTimeLeft -= 1 / 60;
+  bossAnim = (bossAnim + 1) % 60;
+
+  // 보스 이동
+  if (--bossMoveTimer <= 0) resetBossMoveTarget();
+  const dx = boss.tx - boss.x, dy = boss.ty - boss.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist > 2) { boss.x += dx/dist * cfg().bossSpd; boss.y += dy/dist * cfg().bossSpd; }
+
+  // 투사체 발사
+  if (--nextThrow <= 0) spawnBossThrow();
+
+  // 투사체 물리
+  projectiles.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += p.grav; p.life--;
+    if (p.y >= GROUND_Y + dog.h - 10) {
+      p.y = GROUND_Y + dog.h - 10;
+      p.vy *= -.25; p.vx *= .65;
+      if (Math.abs(p.vy) < .5) p.vy = 0;
+      if (Math.abs(p.vx) < .3) p.vx = 0;
+    }
+  });
+  projectiles = projectiles.filter(p => p.life > 0 && p.x > -50 && p.x < W + 50);
+
+  // 히트박스
+  const dh = dog.sliding ? dog.h - 22 : dog.h - 6;
+  const dy2 = dog.sliding ? dog.y + 18 : dog.y + 3;
+  const dr = { x: dog.x + 10, y: dy2, w: dog.w - 20, h: dh };
+
+  // 투사체 충돌 (프레임당 1피해)
+  let bossHit = false;
+  projectiles = projectiles.filter(p => {
+    const pr = { x:p.x-13, y:p.y-13, w:26, h:26 };
+    if (collides(dr, pr)) {
+      if (p.isBone) { bossBonesCaught++; score += 10; }
+      else if (hitCooldown === 0 && !bossHit) { bossHit = true; hp--; hitCooldown = 80; if (hp <= 0) gameOver(); }
+      return false;
+    }
+    return true;
+  });
+
+  // ✅ 버그수정: 보스 클리어 → stageIdx 증가를 버튼 action 안이 아닌 여기서 판정
+  //    버튼은 단순히 "다음으로 진행" 트리거만 함
+  if (bossBonesCaught >= BOSS_BONE_GOAL) {
+    state = "bossClear";
+    const clearedIdx = stageIdx;           // 현재 클리어한 스테이지 인덱스 캡처
+    const isLast     = clearedIdx >= BOSSES.length - 1;
+
+    if (isLast) {
+      // 게임 완전 클리어
+      scoreToSave = score;
+      showMsg(
+        "🎉 모든 스테이지 클리어!",
+        "집에 도착했어요! 🏠\n최종 점수: 🦴 " + scoreToSave + "\n\n닉네임을 입력하고 랭킹에 등록하세요!",
+        [
+          {
+            label: "🏆 랭킹 등록!",
+            needName: true,
+            action: async (name) => {
+              if (window.saveRankingDB) await window.saveRankingDB(name, scoreToSave);
+              stageIdx = 0; score = 0; hp = 3; maxHp = 3; lastHpBonusAt = 0; scoreToSave = 0;
+              state = "title";
+              await openRanking();
+            },
+          },
+          {
+            label: "처음부터 다시",
+            sub: true,
+            action: () => { stageIdx = 0; score = 0; hp = 3; maxHp = 3; lastHpBonusAt = 0; state = "running"; initStage(); },
+          },
+        ]
+      );
+    } else {
+      // ✅ 버그수정: 다음 스테이지 버튼을 누를 때 stageIdx를 증가
+      //    단, 버튼이 중복 클릭되어도 이미 state가 바뀌어 있으므로 안전
+      showMsg(
+        "🎉 보스 격파!",
+        "뼈다귀 " + bossBonesCaught + "개 캐치!\n유혹을 이겨냈어요! 계속 달려요!",
+        [{
+          label: "다음 스테이지!",
+          action: () => {
+            stageIdx = clearedIdx + 1;  // ✅ 캡처한 인덱스 기준으로 +1
+            state = "running";
+            initStage();
+          },
+        }]
+      );
+    }
+
+  } else if (bossTimeLeft <= 0) {
+    state = "bossClear";
+    showMsg(
+      "🦴 뼈다귀가 부족해요!",
+      bossBonesCaught + "/" + BOSS_BONE_GOAL + "개 캐치\n🦴를 " + BOSS_BONE_GOAL + "개 이상 잡아야 해요!",
+      [{
+        label: "다시 도전!",
+        action: () => { hp = 3; score = 0; lastHpBonusAt = 0; state = "boss"; initBoss(); },
+      }]
+    );
+  }
 }
 
-function draw(){
-  ctx.clearRect(0,0,W,H);
-  if(state==='cutscene'){drawCutscene();updateUI();return;}
+// ═══════════════════════════════════════════════════
+//  게임 오버
+// ═══════════════════════════════════════════════════
+function gameOver() {
+  state = "gameover";
+  scoreToSave = score;
+  showMsg(
+    "😢 게임 오버",
+    "뼈다귀 " + score + "개\n스테이지 " + (stageIdx + 1) + "에서 쓰러졌어요...",
+    [
+      {
+        label: "이어서 하기 (현재 스테이지)",
+        action: () => { hp = 3; state = "running"; initStage(); },
+      },
+      {
+        label: "🏆 랭킹 등록 후 처음부터",
+        sub: true,
+        needName: true,
+        action: async (name) => {
+          if (window.saveRankingDB) await window.saveRankingDB(name, scoreToSave);
+          stageIdx = 0; score = 0; hp = 3; maxHp = 3; lastHpBonusAt = 0; scoreToSave = 0;
+          state = "title";
+          await openRanking();
+        },
+      },
+      {
+        label: "그냥 처음부터",
+        sub: true,
+        action: () => { stageIdx = 0; score = 0; hp = 3; maxHp = 3; lastHpBonusAt = 0; state = "running"; initStage(); },
+      },
+    ]
+  );
+}
+
+// ═══════════════════════════════════════════════════
+//  렌더링
+// ═══════════════════════════════════════════════════
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  if (state === "cutscene") { drawCutscene(); updateUI(); return; }
+
   drawBg();
-  if(state==='running'){drawPlatforms();drawObstacles();drawBones();drawHeartItems();drawProgress();}
-  if(state==='boss'){drawBoss();drawProjectiles();drawBossTimer();}
-  drawDog();drawSpeechBubbles();
-  if(hpFlash>0)drawHpFlash();
+  if (state === "running") { drawPlatforms(); drawObstacles(); drawBones(); drawHeartItems(); drawProgress(); }
+  if (state === "boss")    { drawBoss(); drawProjectiles(); drawBossTimer(); }
+  drawDog();
+  drawSpeechBubbles();
+  if (hpFlash > 0) drawHpFlash();
   updateUI();
-  if(state==='title')drawTitle();
+  if (state === "title") drawTitle();
 }
 
-function drawCutscene(){
-  if(!cutscene)return;
-  var s=cutscene.scenes[cutscene.idx];
-  ctx.fillStyle=s.bg||'#1a1a2e';ctx.fillRect(0,0,W,H);
-  ctx.font='100px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(s.emoji||'🐕',W/2,H/2-40);
-  ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,H-150,W,150);
-  ctx.fillStyle='#fff';ctx.font='bold 19px Arial';ctx.textBaseline='top';
-  var lines=(s.text||'').split('\n');
-  for(var i=0;i<lines.length;i++)ctx.fillText(lines[i],W/2,H-138+i*30);
-  ctx.fillStyle='#f7931e';ctx.font='14px Arial';ctx.fillText(s.sub||'',W/2,H-52);
-  ctx.fillStyle='rgba(255,255,255,0.45)';ctx.font='12px Arial';
-  ctx.fillText((cutscene.idx+1)+' / '+cutscene.scenes.length+'  ·  클릭 또는 아무 키나 눌러 계속',W/2,H-18);
+function drawCutscene() {
+  if (!cutscene) return;
+  const s = cutscene.scenes[cutscene.idx];
+  ctx.fillStyle = s.bg || "#1a1a2e"; ctx.fillRect(0, 0, W, H);
+  ctx.font = "100px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(s.emoji || "🐕", W/2, H/2 - 40);
+  ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, H-150, W, 150);
+  ctx.fillStyle = "#fff"; ctx.font = "bold 19px Arial"; ctx.textBaseline = "top";
+  (s.text || "").split("\n").forEach((l, i) => ctx.fillText(l, W/2, H - 138 + i * 30));
+  ctx.fillStyle = "#f7931e"; ctx.font = "14px Arial";
+  ctx.fillText(s.sub || "", W/2, H - 52);
+  ctx.fillStyle = "rgba(255,255,255,0.45)"; ctx.font = "12px Arial";
+  ctx.fillText((cutscene.idx+1) + " / " + cutscene.scenes.length + "  ·  클릭 또는 아무 키나 눌러 계속", W/2, H - 18);
 }
-function drawDog(){
-  dogFrameTimer++;if(dogFrameTimer>9){dogFrame=(dogFrame+1)%2;dogFrameTimer=0;}
-  ctx.save();ctx.translate(dog.x+dog.w/2,dog.y+dog.h);ctx.scale(-1.5,1.5);
-  if(dog.sliding){
-    ctx.font='38px serif';ctx.textAlign='center';ctx.textBaseline='bottom';
-    ctx.save();ctx.scale(1,0.55);ctx.fillText('🐕',0,-4/0.55);ctx.restore();
+
+function drawDog() {
+  dogFrameTimer++;
+  if (dogFrameTimer > 9) { dogFrame = (dogFrame + 1) % 2; dogFrameTimer = 0; }
+  ctx.save();
+  ctx.translate(dog.x + dog.w/2, dog.y + dog.h);
+  ctx.scale(-1.5, 1.5);
+  if (dog.sliding) {
+    ctx.font = "38px serif"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.save(); ctx.scale(1, 0.55); ctx.fillText("🐕", 0, -4/0.55); ctx.restore();
   } else {
-    ctx.font=(dogFrame===0?'42':'40')+'px serif';ctx.textAlign='center';ctx.textBaseline='bottom';
-    ctx.fillText('🐕',0,-4);
-    if(dog.jumpsLeft===0&&dog.y<GROUND_Y-5){ctx.scale(-1,1);ctx.font='13px serif';ctx.fillText('✨',-16,-50);}
+    ctx.font = (dogFrame === 0 ? "42" : "40") + "px serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.fillText("🐕", 0, -4);
+    if (dog.jumpsLeft === 0 && dog.y < GROUND_Y - 5) {
+      ctx.scale(-1, 1); ctx.font = "13px serif"; ctx.fillText("✨", -16, -50);
+    }
   }
   ctx.restore();
 }
-function drawBg(){
-  var p=pal();
-  ctx.fillStyle=p.sky;ctx.fillRect(0,0,W,H);
-  clouds.forEach(function(c){
-    ctx.fillStyle='rgba(255,255,255,0.82)';
-    ctx.beginPath();ctx.ellipse(c.x,c.y,52*c.s,24*c.s,0,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.ellipse(c.x+28*c.s,c.y+4*c.s,36*c.s,18*c.s,0,0,Math.PI*2);ctx.fill();
+
+function drawBg() {
+  const p = pal();
+  ctx.fillStyle = p.sky; ctx.fillRect(0, 0, W, H);
+  clouds.forEach(c => {
+    ctx.fillStyle = "rgba(255,255,255,0.82)";
+    ctx.beginPath(); ctx.ellipse(c.x, c.y, 52*c.s, 24*c.s, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(c.x+28*c.s, c.y+4*c.s, 36*c.s, 18*c.s, 0, 0, Math.PI*2); ctx.fill();
   });
-  ctx.fillStyle=p.groundTop;ctx.fillRect(0,GROUND_Y+dog.h-5,W,9);
-  ctx.fillStyle=p.ground;   ctx.fillRect(0,GROUND_Y+dog.h+4,W,H);
+  ctx.fillStyle = p.groundTop; ctx.fillRect(0, GROUND_Y + dog.h - 5, W, 9);
+  ctx.fillStyle = p.ground;    ctx.fillRect(0, GROUND_Y + dog.h + 4, W, H);
 }
-function drawPlatforms(){
-  platforms.forEach(function(p){
-    ctx.save();ctx.fillStyle=p.color;
-    ctx.beginPath();ctx.roundRect(p.x,p.y,p.w,p.h,5);ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=2;ctx.stroke();ctx.restore();
-    em(p.emoji,p.x+20,p.y+p.h/2,20);
-    if(p.hasBone)em('🦴',p.x+p.w/2,p.y-16,22);
-  });
-}
-function drawObstacles(){obstacles.forEach(function(o){em(o.emoji,o.x+o.w/2,o.y-o.h/2,o.size);});}
-function drawBones(){bones.forEach(function(b){em('🦴',b.x,b.y,24);});}
-function drawHeartItems(){
-  heartItems.forEach(function(h){
-    var scale=1+Math.sin(h.timer*0.06)*0.12;
-    ctx.save();ctx.translate(h.x,h.y);ctx.scale(scale,scale);
-    ctx.globalAlpha=0.25+Math.sin(h.timer*0.1)*0.15;
-    ctx.fillStyle='#ff4466';ctx.beginPath();ctx.arc(0,0,20,0,Math.PI*2);ctx.fill();
-    ctx.globalAlpha=1;ctx.font='28px serif';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText('❤️',0,0);ctx.restore();
+
+function drawPlatforms() {
+  platforms.forEach(p => {
+    ctx.save();
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 5); ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.3)"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    drawEmoji(p.emoji, p.x + 20, p.y + p.h/2, 20);
+    if (p.hasBone) drawEmoji("🦴", p.x + p.w/2, p.y - 16, 22);
   });
 }
-function drawSpeechBubbles(){
-  speechBubbles.forEach(function(b){
-    var alpha=Math.min(1,b.timer/30,(b.maxTimer-b.timer)/20);
-    var lines=b.text.split('\n'),bw=170,bh=14+lines.length*24;
-    var bx=Math.min(Math.max(dog.x+dog.w/2-bw/2,4),W-bw-4),by=dog.y-bh-28;
-    ctx.save();ctx.globalAlpha=alpha;
-    ctx.fillStyle='rgba(255,255,255,0.95)';ctx.beginPath();ctx.roundRect(bx,by,bw,bh,10);ctx.fill();
-    ctx.strokeStyle='#f7931e';ctx.lineWidth=2.5;ctx.stroke();
-    var cx2=dog.x+dog.w/2;
-    ctx.fillStyle='rgba(255,255,255,0.95)';
-    ctx.beginPath();ctx.moveTo(cx2-8,by+bh);ctx.lineTo(cx2+8,by+bh);ctx.lineTo(cx2,by+bh+12);ctx.closePath();ctx.fill();
-    ctx.strokeStyle='#f7931e';ctx.lineWidth=2;ctx.stroke();
-    ctx.fillStyle='#222';ctx.font='bold 13px Arial';ctx.textAlign='center';ctx.textBaseline='top';
-    for(var i=0;i<lines.length;i++)ctx.fillText(lines[i],bx+bw/2,by+8+i*24);
+
+function drawObstacles() {
+  obstacles.forEach(o => drawEmoji(o.emoji, o.x + o.w/2, o.y - o.h/2, o.size));
+}
+
+function drawBones() {
+  bones.forEach(b => drawEmoji("🦴", b.x, b.y, 24));
+}
+
+function drawHeartItems() {
+  heartItems.forEach(h => {
+    const scale = 1 + Math.sin(h.timer * 0.06) * 0.12;
+    ctx.save();
+    ctx.translate(h.x, h.y); ctx.scale(scale, scale);
+    ctx.globalAlpha = 0.25 + Math.sin(h.timer * 0.1) * 0.15;
+    ctx.fillStyle = "#ff4466"; ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.font = "28px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("❤️", 0, 0);
     ctx.restore();
   });
 }
-function drawBoss(){
-  if(!boss)return;
-  ctx.save();ctx.fillStyle='rgba(0,0,0,0.18)';ctx.beginPath();ctx.ellipse(boss.x,GROUND_Y+dog.h+2,28,8,0,0,Math.PI*2);ctx.fill();ctx.restore();
-  em(boss.emoji,boss.x,boss.y,62);
-  var bw=86,bh=8,bx=boss.x-bw/2,by=boss.y-70;
-  ctx.fillStyle='#222';ctx.fillRect(bx,by,bw,bh);
-  ctx.fillStyle=Math.max(0,bossTimeLeft/bossMaxTime)>.5?'#2ecc71':'#e74c3c';
-  ctx.fillRect(bx,by,bw*Math.max(0,bossTimeLeft/bossMaxTime),bh);
-  ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=1;ctx.strokeRect(bx,by,bw,bh);
-  ctx.font='10px Arial';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(boss.name,boss.x,by-5);
-}
-function drawProjectiles(){
-  projectiles.forEach(function(p){
-    if(p.life<=BLINK_START&&Math.floor(p.life/5)%2===0)return;
-    em(p.emoji,p.x,p.y,p.size||28);
+
+function drawSpeechBubbles() {
+  speechBubbles.forEach(b => {
+    const alpha = Math.min(1, b.timer/30, (b.maxTimer - b.timer)/20);
+    const lines = b.text.split("\n");
+    const bw = 170, bh = 14 + lines.length * 24;
+    const bx = Math.min(Math.max(dog.x + dog.w/2 - bw/2, 4), W - bw - 4);
+    const by = dog.y - bh - 28;
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.fill();
+    ctx.strokeStyle = "#f7931e"; ctx.lineWidth = 2.5; ctx.stroke();
+    const cx = dog.x + dog.w/2;
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.beginPath(); ctx.moveTo(cx-8, by+bh); ctx.lineTo(cx+8, by+bh); ctx.lineTo(cx, by+bh+12); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "#f7931e"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = "#222"; ctx.font = "bold 13px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    lines.forEach((l, i) => ctx.fillText(l, bx + bw/2, by + 8 + i*24));
+    ctx.restore();
   });
 }
-function drawBossTimer(){
-  var tw=220,th=10,tx=W/2-tw/2,ty=14;
-  ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(tx,ty,tw,th);
-  var r=Math.max(0,bossTimeLeft/bossMaxTime);
-  ctx.fillStyle=r>.4?'#3498db':'#e74c3c';ctx.fillRect(tx,ty,tw*r,th);
-  ctx.font='11px Arial';ctx.fillStyle='#fff';ctx.textAlign='center';
-  ctx.fillText('버텨라! '+Math.ceil(bossTimeLeft)+'초',W/2,ty-3);
-}
-function drawProgress(){
-  var c=cfg(),pw=W-60,ph=7,px=30,py=H-13;
-  ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(px,py,pw,ph);
-  ctx.fillStyle='#f7931e';ctx.fillRect(px,py,pw*(stageDist/c.dist),ph);
-  em('🐕',px+pw*(stageDist/c.dist),py+ph/2,18);
-  em('🏠',px+pw+14,py+ph/2,20);
-}
-function drawHpFlash(){
-  ctx.save();ctx.fillStyle='rgba(255,80,80,'+(hpFlash/90*0.28)+')';ctx.fillRect(0,0,W,H);
-  ctx.font='bold 20px Arial';ctx.fillStyle='rgba(255,255,255,'+(hpFlash/90)+')';ctx.textAlign='center';
-  ctx.fillText('❤️ +1 보너스!',W/2,H/2-16);ctx.restore();
-}
-function drawTitle(){
-  ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(0,0,W,H);ctx.textAlign='center';
-  ctx.font='bold 36px Arial';ctx.fillStyle='#fff';ctx.fillText('🐕 강아지 집 찾기',W/2,H/2-58);
-  ctx.font='14px Arial';ctx.fillStyle='#ddd';ctx.fillText('길을 잃은 강아지가 집으로 돌아가는 여정!',W/2,H/2-22);
-  ctx.font='12px Arial';ctx.fillStyle='#aaa';
-  ctx.fillText('🦴 30% 획득 → 보스 도전  |  ❤️ 하트 획득 시 HP+1  |  🏆 공유 랭킹',W/2,H/2+8);
-  ctx.font='15px Arial';ctx.fillStyle='#f7931e';ctx.fillText('아무 키나 눌러 시작',W/2,H/2+50);
-}
-function updateUI(){
-  document.getElementById('stageLabel').textContent=state==='boss'?(boss?boss.name:''):'스테이지 '+(stageIdx+1)+' · '+pal().name;
-  document.getElementById('scoreLabel').textContent='🦴 '+score;
-  document.getElementById('hpLabel').textContent='❤️'.repeat(Math.max(0,hp))+'🖤'.repeat(Math.max(0,3-hp));
-  var bg=document.getElementById('boneGoal');
-  if(state==='boss'){
-    bg.style.display='block';bg.textContent='🦴 '+bossBonesCaught+'/'+BOSS_BONE_GOAL;
-    bg.style.color=bossBonesCaught>=BOSS_BONE_GOAL?'#2ecc71':'#fff';
-  } else if(state==='running'){
-    bg.style.display='block';
-    var pct=totalBones>0?Math.floor(collectedBones/totalBones*100):0;
-    bg.textContent=collectedBones+'/'+totalBones+'개 ('+pct+'%)';
-    bg.style.color=pct>=30?'#2ecc71':'#fff';
-  } else{bg.style.display='none';}
+
+function drawBoss() {
+  if (!boss) return;
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.18)";
+  ctx.beginPath(); ctx.ellipse(boss.x, GROUND_Y+dog.h+2, 28, 8, 0, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  drawEmoji(boss.emoji, boss.x, boss.y, 62);
+  const bw = 86, bh = 8, bx = boss.x - bw/2, by = boss.y - 70;
+  ctx.fillStyle = "#222"; ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = Math.max(0, bossTimeLeft/bossMaxTime) > .5 ? "#2ecc71" : "#e74c3c";
+  ctx.fillRect(bx, by, bw * Math.max(0, bossTimeLeft/bossMaxTime), bh);
+  ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bw, bh);
+  ctx.font = "10px Arial"; ctx.fillStyle = "#fff"; ctx.textAlign = "center";
+  ctx.fillText(boss.name, boss.x, by - 5);
 }
 
-function loop(){update();draw();requestAnimationFrame(loop);}
-state='title';
+function drawProjectiles() {
+  projectiles.forEach(p => {
+    if (p.life <= BLINK_START && Math.floor(p.life/5) % 2 === 0) return;
+    drawEmoji(p.emoji, p.x, p.y, p.size || 28);
+  });
+}
+
+function drawBossTimer() {
+  const tw = 220, th = 10, tx = W/2 - tw/2, ty = 14;
+  ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(tx, ty, tw, th);
+  const r = Math.max(0, bossTimeLeft / bossMaxTime);
+  ctx.fillStyle = r > .4 ? "#3498db" : "#e74c3c"; ctx.fillRect(tx, ty, tw*r, th);
+  ctx.font = "11px Arial"; ctx.fillStyle = "#fff"; ctx.textAlign = "center";
+  ctx.fillText("버텨라! " + Math.ceil(bossTimeLeft) + "초", W/2, ty - 3);
+}
+
+function drawProgress() {
+  const c = cfg(), pw = W - 60, ph = 7, px = 30, py = H - 13;
+  ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(px, py, pw, ph);
+  ctx.fillStyle = "#f7931e"; ctx.fillRect(px, py, pw * (stageDist / c.dist), ph);
+  drawEmoji("🐕", px + pw * (stageDist/c.dist), py + ph/2, 18);
+  drawEmoji("🏠", px + pw + 14, py + ph/2, 20);
+}
+
+function drawHpFlash() {
+  ctx.save();
+  ctx.fillStyle = "rgba(255,80,80," + (hpFlash/90*0.28) + ")"; ctx.fillRect(0, 0, W, H);
+  ctx.font = "bold 20px Arial"; ctx.fillStyle = "rgba(255,255,255," + (hpFlash/90) + ")";
+  ctx.textAlign = "center"; ctx.fillText("❤️ +1 보너스!", W/2, H/2 - 16);
+  ctx.restore();
+}
+
+function drawTitle() {
+  ctx.fillStyle = "rgba(0,0,0,0.65)"; ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = "center";
+  ctx.font = "bold 36px Arial"; ctx.fillStyle = "#fff"; ctx.fillText("🐕 강아지 집 찾기", W/2, H/2 - 58);
+  ctx.font = "14px Arial"; ctx.fillStyle = "#ddd"; ctx.fillText("길을 잃은 강아지가 집으로 돌아가는 여정!", W/2, H/2 - 22);
+  ctx.font = "12px Arial"; ctx.fillStyle = "#aaa";
+  ctx.fillText("🦴 30% 획득 → 보스 도전  |  ❤️ 하트 획득 시 HP+1  |  🏆 공유 랭킹", W/2, H/2 + 8);
+  ctx.font = "15px Arial"; ctx.fillStyle = "#f7931e"; ctx.fillText("아무 키나 눌러 시작", W/2, H/2 + 50);
+}
+
+function updateUI() {
+  document.getElementById("stageLabel").textContent =
+    state === "boss" ? (boss ? boss.name : "") : "스테이지 " + (stageIdx+1) + " · " + pal().name;
+  document.getElementById("scoreLabel").textContent = "🦴 " + score;
+  document.getElementById("hpLabel").textContent =
+    "❤️".repeat(Math.max(0, hp)) + "🖤".repeat(Math.max(0, 3 - hp));
+
+  const bg = document.getElementById("boneGoal");
+  if (state === "boss") {
+    bg.style.display = "block";
+    bg.textContent   = "🦴 " + bossBonesCaught + "/" + BOSS_BONE_GOAL;
+    bg.style.color   = bossBonesCaught >= BOSS_BONE_GOAL ? "#2ecc71" : "#fff";
+  } else if (state === "running") {
+    bg.style.display = "block";
+    const pct = totalBones > 0 ? Math.floor(collectedBones/totalBones*100) : 0;
+    bg.textContent = collectedBones + "/" + totalBones + "개 (" + pct + "%)";
+    bg.style.color = pct >= 30 ? "#2ecc71" : "#fff";
+  } else {
+    bg.style.display = "none";
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  게임 루프 시작
+// ═══════════════════════════════════════════════════
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+state = "title";
 loop();
 </script>
 </body>
