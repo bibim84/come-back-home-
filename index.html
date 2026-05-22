@@ -19,9 +19,30 @@ canvas{border-radius:14px;display:block;box-shadow:0 8px 40px rgba(0,0,0,0.6);}
 .msgBtns button.sub{background:rgba(255,255,255,0.10);border-color:rgba(255,255,255,0.18);}
 .msgBtns button.focused{border-color:#fff;transform:scale(1.04);box-shadow:0 0 0 3px rgba(247,147,30,0.35);}
 .msgBtns button:active{transform:scale(0.98);}
-#muteBtn{position:absolute;top:10px;right:10px;background:rgba(10,10,30,0.72);border:1px solid rgba(255,255,255,0.15);color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;z-index:20;backdrop-filter:blur(6px);transition:background .2s;}
-#muteBtn:hover{background:rgba(247,147,30,0.5);}
+/* 하단 중앙 버튼 그룹 */
+#bottomBtns{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:20;}
+#muteBtn,#rankBtn{background:rgba(10,10,30,0.80);border:1px solid rgba(255,255,255,0.18);color:white;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);transition:background .2s;}
+#muteBtn:hover,#rankBtn:hover{background:rgba(247,147,30,0.6);}
 #controls{margin-top:9px;color:#555;font-size:12px;text-align:center;letter-spacing:.2px;}
+/* 랭킹 패널 */
+#rankPanel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(8,8,24,0.97);color:white;padding:24px 28px;border-radius:18px;display:none;z-index:30;width:300px;border:1px solid rgba(255,255,255,0.12);box-shadow:0 12px 48px rgba(0,0,0,0.8);}
+#rankPanel h2{font-size:18px;margin-bottom:14px;text-align:center;letter-spacing:-.3px;}
+#rankList{list-style:none;margin-bottom:14px;}
+#rankList li{display:flex;justify-content:space-between;align-items:center;padding:7px 4px;border-bottom:1px solid rgba(255,255,255,0.07);font-size:13px;}
+#rankList li:last-child{border-bottom:none;}
+#rankList .rank-no{width:24px;color:#f7931e;font-weight:700;font-size:15px;}
+#rankList .rank-name{flex:1;padding:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#rankList .rank-score{color:#ffe066;font-weight:700;}
+#rankPanel .closeBtn{width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);color:white;padding:9px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:700;}
+#rankPanel .closeBtn:hover{background:rgba(247,147,30,0.5);}
+/* 닉네임 입력 팝업 */
+#nickPanel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(8,8,24,0.97);color:white;padding:26px 30px;border-radius:18px;display:none;z-index:40;width:300px;border:1px solid rgba(255,255,255,0.12);box-shadow:0 12px 48px rgba(0,0,0,0.8);text-align:center;}
+#nickPanel h2{font-size:18px;margin-bottom:6px;}
+#nickPanel p{font-size:12px;color:#aaa;margin-bottom:14px;}
+#nickInput{width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.25);color:white;padding:10px 14px;border-radius:12px;font-size:15px;margin-bottom:12px;outline:none;text-align:center;}
+#nickInput:focus{border-color:#f7931e;}
+#nickSubmit{width:100%;background:#f7931e;border:none;color:white;padding:11px;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;}
+#nickSubmit:hover{background:#e0831a;}
 /* 모바일 터치 버튼 */
 #touchCtrl{position:absolute;bottom:18px;left:0;right:0;display:none;justify-content:space-between;padding:0 14px;pointer-events:none;}
 #touchCtrl.show{display:flex;}
@@ -39,7 +60,23 @@ canvas{border-radius:14px;display:block;box-shadow:0 8px 40px rgba(0,0,0,0.6);}
     <div class="stat" id="hpLabel">❤️❤️❤️</div>
     <div class="stat" id="boneGoal" style="display:none"></div>
   </div>
-  <button id="muteBtn" title="음소거">🔊</button>
+  <div id="bottomBtns">
+    <button id="rankBtn" title="랭킹">🏆</button>
+    <button id="muteBtn" title="음소거">🔊</button>
+  </div>
+  <!-- 랭킹 패널 -->
+  <div id="rankPanel">
+    <h2>🏆 실시간 랭킹</h2>
+    <ul id="rankList"><li style="text-align:center;color:#aaa">불러오는 중...</li></ul>
+    <button class="closeBtn" id="rankClose">닫기</button>
+  </div>
+  <!-- 닉네임 입력 -->
+  <div id="nickPanel">
+    <h2>🎉 점수 등록!</h2>
+    <p id="nickScore"></p>
+    <input id="nickInput" type="text" maxlength="10" placeholder="닉네임 입력 (최대 10자)">
+    <button id="nickSubmit">랭킹에 등록하기</button>
+  </div>
   <!-- 모바일 터치 -->
   <div id="touchCtrl">
     <div class="tBtnGroup">
@@ -878,7 +915,10 @@ function bossUpdate(){
         scoreToSave=score;
         showMsg("🏠 집에 도착!",
           "강아지가 드디어 집으로 돌아왔어요! 🐶💕\n최종 점수: 🦴 "+scoreToSave+"\n\nSpace: 처음부터 다시",
-          [{label:"🔄 처음부터 다시  [Space]",action:()=>{stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;state="running";initStage();}}]
+          [
+            {label:"🏆 점수 등록하기",action:()=>{if(window.showRankingEntry)window.showRankingEntry(scoreToSave);}},
+            {label:"🔄 처음부터 다시  [Space]",action:()=>{stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;state="running";initStage();}},
+          ]
         );
       });
     } else {
@@ -907,7 +947,8 @@ function gameOver(){
   showMsg("😢 게임 오버",
     "뼈다귀 "+score+"개\n스테이지 "+(stageIdx+1)+"에서 쓰러졌어요...\n\n↑↓ 선택  Space 확인",
     [
-      {label:"▶ 이어서 하기  [Space]",action:()=>{hp=3;state="running";initStage();}},
+      {label:"🏆 점수 등록하기",action:()=>{if(window.showRankingEntry)window.showRankingEntry(scoreToSave);}},
+      {label:"▶ 이어서 하기",action:()=>{hp=3;state="running";initStage();}},
       {label:"🔄 처음부터",sub:true,action:()=>{stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;state="running";initStage();}},
     ]
   );
@@ -1185,5 +1226,121 @@ function loop(){update();draw();requestAnimationFrame(loop);}
 state="title";
 loop();
 </script>
+
+<!-- ═══════════════════════════════════
+     🔥 FIREBASE RANKING SYSTEM (REST API)
+═══════════════════════════════════ -->
+<script>
+(function(){
+  var PROJECT="come-back-home-60413";
+  var API_KEY="AIzaSyCKPnUeU_BCNFYH6j4dE7j149pGToYNWWM";
+  var COL="rankings_v2";
+  var BASE="https://firestore.googleapis.com/v1/projects/"+PROJECT+"/databases/(default)/documents/";
+
+  /* ── Firestore REST: 문서 추가 ── */
+  async function saveScore(name,scoreVal){
+    try{
+      var body={fields:{
+        name:{stringValue:String(name).trim()||"무명"},
+        score:{integerValue:Math.floor(Number(scoreVal))},
+        createdAt:{timestampValue:new Date().toISOString()}
+      }};
+      var res=await fetch(BASE+COL+"?key="+API_KEY,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(body)
+      });
+      if(!res.ok)throw new Error(await res.text());
+      return true;
+    }catch(e){console.error("저장 실패",e);return false;}
+  }
+
+  /* ── Firestore REST: TOP10 조회 ── */
+  async function loadRanking(){
+    var list=document.getElementById("rankList");
+    list.innerHTML='<li style="text-align:center;color:#aaa;padding:12px">불러오는 중...</li>';
+    try{
+      /* runQuery로 orderBy+limit 지원 */
+      var body={structuredQuery:{
+        from:[{collectionId:COL}],
+        orderBy:[{field:{fieldPath:"score"},direction:"DESCENDING"}],
+        limit:10
+      }};
+      var res=await fetch(
+        "https://firestore.googleapis.com/v1/projects/"+PROJECT+"/databases/(default)/documents:runQuery?key="+API_KEY,
+        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}
+      );
+      if(!res.ok)throw new Error(await res.text());
+      var rows=await res.json();
+      /* runQuery는 배열 반환, document 없는 행 필터 */
+      var docs=rows.filter(function(r){return r.document;});
+      list.innerHTML="";
+      if(docs.length===0){
+        list.innerHTML='<li style="text-align:center;color:#aaa;padding:10px">아직 기록이 없어요! 🐕</li>';
+        return;
+      }
+      var medals=["🥇","🥈","🥉"];
+      docs.forEach(function(r,i){
+        var f=r.document.fields||{};
+        var name=f.name?f.name.stringValue:"무명";
+        var score=f.score?(f.score.integerValue||f.score.doubleValue||0):0;
+        var li=document.createElement("li");
+        li.innerHTML='<span class="rank-no">' +(medals[i]||(i+1))+ '</span>'+
+                     '<span class="rank-name">' +esc(name)+ '</span>'+
+                     '<span class="rank-score">🦴 ' +score+ '</span>';
+        list.appendChild(li);
+      });
+    }catch(e){
+      console.error("랭킹 로드 실패",e);
+      list.innerHTML='<li style="text-align:center;color:#f88;padding:10px">불러오기 실패 😢</li>';
+    }
+  }
+
+  function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+  /* ── 랭킹 패널 ── */
+  var rankBtn=document.getElementById("rankBtn");
+  var rankPanel=document.getElementById("rankPanel");
+  var rankClose=document.getElementById("rankClose");
+  rankBtn.addEventListener("click",function(){rankPanel.style.display="block";loadRanking();});
+  rankClose.addEventListener("click",function(){rankPanel.style.display="none";});
+
+  /* ── 닉네임 패널 ── */
+  var nickPanel=document.getElementById("nickPanel");
+  var nickInput=document.getElementById("nickInput");
+  var nickSubmit=document.getElementById("nickSubmit");
+  var nickScoreEl=document.getElementById("nickScore");
+  var savedNick=localStorage.getItem("dogGameNick")||"";
+
+  function showNickPanel(score){
+    nickScoreEl.textContent="최종 점수: 🦴 "+score;
+    nickInput.value=savedNick;
+    nickPanel.style.display="block";
+    setTimeout(function(){nickInput.focus();},100);
+  }
+  function hideNickPanel(){nickPanel.style.display="none";}
+
+  nickSubmit.addEventListener("click",async function(){
+    var name=nickInput.value.trim()||"무명";
+    savedNick=name;
+    localStorage.setItem("dogGameNick",name);
+    nickSubmit.textContent="등록 중...";
+    nickSubmit.disabled=true;
+    var ok=await saveScore(name,window._gameScoreToSave||0);
+    nickSubmit.textContent="랭킹에 등록하기";
+    nickSubmit.disabled=false;
+    hideNickPanel();
+    if(ok){rankPanel.style.display="block";loadRanking();}
+    else{alert("저장 실패! 잠시 후 다시 시도해주세요.");}
+  });
+  nickInput.addEventListener("keydown",function(e){if(e.key==="Enter")nickSubmit.click();});
+
+  /* ── 게임 연결 ── */
+  window.showRankingEntry=function(score){
+    window._gameScoreToSave=score;
+    showNickPanel(score);
+  };
+})();
+</script>
+
 </body>
-</html>
