@@ -20,7 +20,7 @@ canvas{border-radius:14px;display:block;box-shadow:0 8px 40px rgba(0,0,0,0.6);}
 .msgBtns button.focused{border-color:#fff;transform:scale(1.04);box-shadow:0 0 0 3px rgba(247,147,30,0.35);}
 .msgBtns button:active{transform:scale(0.98);}
 /* 하단 중앙 버튼 그룹 */
-#bottomBtns{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:20;}
+#bottomBtns{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:25;}
 #muteBtn,#rankBtn{background:rgba(10,10,30,0.80);border:1px solid rgba(255,255,255,0.18);color:white;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);transition:background .2s;}
 #muteBtn:hover,#rankBtn:hover{background:rgba(247,147,30,0.6);}
 #controls{margin-top:9px;color:#555;font-size:12px;text-align:center;letter-spacing:.2px;}
@@ -44,7 +44,7 @@ canvas{border-radius:14px;display:block;box-shadow:0 8px 40px rgba(0,0,0,0.6);}
 #nickSubmit{width:100%;background:#f7931e;border:none;color:white;padding:11px;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;}
 #nickSubmit:hover{background:#e0831a;}
 /* 모바일 터치 버튼 */
-#touchCtrl{position:absolute;bottom:18px;left:0;right:0;display:none;justify-content:space-between;padding:0 14px;pointer-events:none;}
+#touchCtrl{position:absolute;bottom:12px;left:0;right:0;display:none;justify-content:space-between;padding:0 14px;pointer-events:none;}
 #touchCtrl.show{display:flex;}
 .tBtn{pointer-events:all;background:rgba(255,255,255,0.13);border:1.5px solid rgba(255,255,255,0.22);color:white;border-radius:50%;width:58px;height:58px;font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px);user-select:none;-webkit-user-select:none;active-scale:.9;transition:background .1s;}
 .tBtn:active{background:rgba(247,147,30,0.45);}
@@ -944,10 +944,11 @@ function bossUpdate(){
 function gameOver(){
   state="gameover";scoreToSave=score;stopBGM();
   triggerShake(12);AudioEngine.sfx.gameOver();
+  /* 1초 후 닉네임 등록 팝업 자동 표시 (게임 팝업과 겹치지 않게) */
   showMsg("😢 게임 오버",
-    "뼈다귀 "+score+"개\n스테이지 "+(stageIdx+1)+"에서 쓰러졌어요...\n\n↑↓ 선택  Space 확인",
+    "뼈다귀 "+score+"개\n스테이지 "+(stageIdx+1)+"에서 쓰러졌어요...",
     [
-      {label:"🏆 점수 등록하기",action:()=>{if(window.showRankingEntry)window.showRankingEntry(scoreToSave);}},
+      {label:"🏆 점수 등록",action:()=>{if(window.showRankingEntry)window.showRankingEntry(scoreToSave);}},
       {label:"▶ 이어서 하기",action:()=>{hp=3;state="running";initStage();}},
       {label:"🔄 처음부터",sub:true,action:()=>{stageIdx=0;score=0;hp=3;maxHp=3;lastHpBonusAt=0;state="running";initStage();}},
     ]
@@ -1231,7 +1232,8 @@ loop();
      🔥 FIREBASE RANKING SYSTEM (REST API)
 ═══════════════════════════════════ -->
 <script>
-(function(){
+/* Firebase 랭킹 — 오류 시 게임에 영향 없음 */
+try{(function(){
   var PROJECT="come-back-home-60413";
   var API_KEY="AIzaSyCKPnUeU_BCNFYH6j4dE7j149pGToYNWWM";
   var COL="rankings_v2";
@@ -1340,7 +1342,14 @@ loop();
     window._gameScoreToSave=score;
     showNickPanel(score);
   };
-})();
+})();}catch(fbErr){
+  console.warn("Firebase 초기화 실패 (게임은 정상 작동):", fbErr);
+  /* 랭킹 버튼은 표시하되 클릭 시 안내만 */
+  var rb=document.getElementById("rankBtn");
+  if(rb)rb.addEventListener("click",function(){
+    alert("랭킹은 GitHub Pages에서만 작동합니다\nhttps://[your-username].github.io/[repo]/");
+  });
+}
 </script>
 
 </body>
