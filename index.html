@@ -105,12 +105,12 @@ canvas{border-radius:14px;display:block;box-shadow:0 8px 40px rgba(0,0,0,0.6);}
       <div class="tBtn" id="tRight">▶</div>
     </div>
     <div class="tBtnGroup">
-      <div class="tBtn" id="tSlide">🛝</div>
+      <div class="tBtn" id="tSlide">⬇</div>
       <div class="tBtn" id="tJump">⬆</div>
     </div>
   </div>
 </div>
-<div id="controls">⬆/Space 점프 &nbsp;|&nbsp; ⬇ 슬라이드 &nbsp;|&nbsp; ← → 이동 &nbsp;|&nbsp; ESC 일시정지 &nbsp;|&nbsp;</div>
+<div id="controls">⬆/Space 점프 &nbsp;|&nbsp; ⬇ 슬라이드 &nbsp;|&nbsp; ← → 이동 &nbsp;|&nbsp; ESC 일시정지 &nbsp;|&nbsp; </div>
 
 <script>
 "use strict";
@@ -1273,7 +1273,7 @@ function drawTitle() {
   ctx.font="bold 38px Arial"; ctx.fillStyle="#fff"; ctx.fillText("🐕 강아지 집 찾기", W/2, H/2-62);
   ctx.shadowBlur=0;
   ctx.font="14px Arial"; ctx.fillStyle="#ddd"; ctx.fillText("길을 잃은 강아지가 집으로 돌아가는 여정!", W/2, H/2-24);
-  ctx.font="12px Arial"; ctx.fillStyle="#aaa"; ctx.fillText("🦴 30% → 보스 도전  |  ESC 일시정지  ", W/2, H/2+8);
+  ctx.font="12px Arial"; ctx.fillStyle="#aaa"; ctx.fillText("🦴 30% → 보스 도전  |  ESC 일시정지  |  ", W/2, H/2+8);
   ctx.font="bold 16px Arial"; ctx.fillStyle="#f7931e";
   if (Math.floor(Date.now()/600)%2===0) ctx.fillText("▶  아무 키나 눌러 시작", W/2, H/2+50);
   ctx.font="11px Arial"; ctx.fillStyle="#555"; ctx.fillText("🔊 처음 입력 시 BGM이 시작됩니다", W/2, H/2+78);
